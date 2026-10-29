@@ -1,0 +1,47 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.28/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.28",
+  "version": "1.0.2",
+  "id": "",
+  "developer": {
+    "name": "Lior Kamrat",
+    "websiteUrl": "",
+    "privacyUrl": "",
+    "termsOfUseUrl": ""
+  },
+  "name": {
+    "short": "ServiceNow for Cowork",
+    "full": "ServiceNow for Cowork"
+  },
+  "description": {
+    "short": "Investigate workplace IT problems with recent ServiceNow incidents",
+    "full": "Investigate reported workplace IT symptoms, including failed access, unavailable or slow applications, service outages, and remote connectivity trouble, even without a ticket number or ServiceNow terminology. Read recent incidents and change requests from your configured ServiceNow instance, cite source links, and include requested Microsoft 365 background. Respect explicit source restrictions; ordinary document-finding without an IT problem does not call for incident lookup. The connection is read-only and cannot create, update, assign, approve, or resolve records."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#24364B",
+  "agentSkills": [
+    { "folder": "./skills/servicenow-incidents" },
+    { "folder": "./skills/servicenow-changes" }
+  ],
+  "agentConnectors": [
+    {
+      "id": "servicenow-api",
+      "displayName": "ServiceNow Instance",
+      "description": "Find recent ServiceNow incidents behind reported workplace IT symptoms, even without a ticket number; read-only.",
+      "toolSource": {
+        "remoteMcpServer": {
+          "mcpServerUrl": "",
+          "mcpToolDescription": {
+            "file": "mcp-tools.json"
+          },
+          "authorization": {
+            "type": "None"
+          }
+        }
+      }
+    }
+  ]
+}
