@@ -15,13 +15,16 @@ available through Cowork's separately authorized tools.
 | Tool | Purpose |
 |---|---|
 | `search_incidents` | Find incidents by number, literal title substring, state, priority or assignee. |
-| `get_incident` | Read one incident by number, including any recorded impact and workaround. |
+| `get_incident` | Read an incident's description, impact and resolution notes by number. |
 | `search_changes` | Find change requests by state, type or assignment group. |
 | `get_change` | Read one change request by number. |
 
 All four tools are read-only and return source links. All reads are limited to
 records updated within six months; searches return up to 20 matches, newest update
 first. Incident search is not semantic or full-record search.
+
+Exact lookups return selected detail fields. Unlisted fields, including
+`comments`, `work_notes` and `caller_id`, are excluded.
 
 ## Architecture
 

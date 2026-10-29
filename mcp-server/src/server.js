@@ -26,6 +26,16 @@ app.use(express.json({ limit: "2mb" }));
 
 const READ_TOOLS = new Set(["search_incidents", "get_incident", "search_changes", "get_change"]);
 const RECENT_QUERY = "sys_updated_on>javascript:gs.monthsAgo(6)";
+const INCIDENT_LIST_FIELDS = [
+  "sys_id", "number", "short_description", "priority", "state", "assigned_to",
+  "assignment_group", "opened_at", "category", "sys_updated_on",
+];
+const INCIDENT_DETAIL_FIELDS = [...INCIDENT_LIST_FIELDS, "description", "impact", "urgency", "close_notes"];
+const CHANGE_LIST_FIELDS = [
+  "sys_id", "number", "short_description", "type", "risk", "state", "start_date",
+  "end_date", "assigned_to", "assignment_group", "sys_updated_on",
+];
+const CHANGE_DETAIL_FIELDS = [...CHANGE_LIST_FIELDS, "description", "impact"];
 const SN_USER = process.env.SERVICENOW_USERNAME;
 const SN_PASS = process.env.SERVICENOW_PASSWORD;
 
@@ -103,12 +113,15 @@ function recordNumber(value, prefix) {
   return number;
 }
 
-function linkedRecords(data, table) {
+function linkedRecords(data, table, fields) {
   if (!Array.isArray(data.result)) throw new Error("ServiceNow returned an invalid record list.");
   return data.result.map((record) => {
     if (!record || !/^[a-f0-9]{32}$/i.test(record.sys_id))
       throw new Error("ServiceNow returned a record without a valid source ID.");
-    return { ...record, source_url: `${SN_INSTANCE}/${table}.do?sys_id=${record.sys_id}` };
+    const selected = Object.fromEntries(
+      fields.filter((field) => Object.hasOwn(record, field)).map((field) => [field, record[field]])
+    );
+    return { ...selected, source_url: `${SN_INSTANCE}/${table}.do?sys_id=${record.sys_id}` };
   });
 }
 
@@ -124,12 +137,11 @@ async function fetchIncidents(args) {
       : `short_descriptionLIKE${args.query}`);
   }
   parts.push("ORDERBYDESCsys_updated_on");
-  const fields = "sys_id,number,short_description,priority,state,assigned_to,assignment_group,opened_at,category,sys_updated_on";
   const data = await snRequest(
     "GET",
-    `table/incident?sysparm_query=${encodeURIComponent(parts.join("^"))}&sysparm_fields=${fields}&sysparm_limit=20&sysparm_display_value=true`
+    `table/incident?sysparm_query=${encodeURIComponent(parts.join("^"))}&sysparm_fields=${INCIDENT_LIST_FIELDS.join(",")}&sysparm_limit=20&sysparm_display_value=true`
   );
-  return linkedRecords(data, "incident");
+  return linkedRecords(data, "incident", INCIDENT_LIST_FIELDS);
 }
 
 async function handleTool(name, args) {
@@ -152,9 +164,9 @@ async function handleTool(name, args) {
       const number = recordNumber(args.number, "INC");
       const data = await snRequest(
         "GET",
-        `table/incident?sysparm_query=${encodeURIComponent(`${RECENT_QUERY}^number=${number}`)}&sysparm_limit=1&sysparm_display_value=true`
+        `table/incident?sysparm_query=${encodeURIComponent(`${RECENT_QUERY}^number=${number}`)}&sysparm_fields=${INCIDENT_DETAIL_FIELDS.join(",")}&sysparm_limit=1&sysparm_display_value=true`
       );
-      const records = linkedRecords(data, "incident");
+      const records = linkedRecords(data, "incident", INCIDENT_DETAIL_FIELDS);
       if (records.length === 0) throw new Error(`Incident ${number} not found within the last six months.`);
       return records[0];
     }
@@ -165,21 +177,20 @@ async function handleTool(name, args) {
       if (args.type) parts.push(`type=${args.type}`);
       if (args.assignment_group) parts.push(`assignment_group.nameLIKE${args.assignment_group}`);
       parts.push("ORDERBYDESCsys_updated_on");
-      const fields = "sys_id,number,short_description,type,risk,state,start_date,end_date,assigned_to,assignment_group,sys_updated_on";
       const data = await snRequest(
         "GET",
-        `table/change_request?sysparm_query=${encodeURIComponent(parts.join("^"))}&sysparm_fields=${fields}&sysparm_limit=20&sysparm_display_value=true`
+        `table/change_request?sysparm_query=${encodeURIComponent(parts.join("^"))}&sysparm_fields=${CHANGE_LIST_FIELDS.join(",")}&sysparm_limit=20&sysparm_display_value=true`
       );
-      return linkedRecords(data, "change_request");
+      return linkedRecords(data, "change_request", CHANGE_LIST_FIELDS);
     }
 
     case "get_change": {
       const number = recordNumber(args.number, "CHG");
       const data = await snRequest(
         "GET",
-        `table/change_request?sysparm_query=${encodeURIComponent(`${RECENT_QUERY}^number=${number}`)}&sysparm_limit=1&sysparm_display_value=true`
+        `table/change_request?sysparm_query=${encodeURIComponent(`${RECENT_QUERY}^number=${number}`)}&sysparm_fields=${CHANGE_DETAIL_FIELDS.join(",")}&sysparm_limit=1&sysparm_display_value=true`
       );
-      const records = linkedRecords(data, "change_request");
+      const records = linkedRecords(data, "change_request", CHANGE_DETAIL_FIELDS);
       if (records.length === 0) throw new Error(`Change ${number} not found within the last six months.`);
       return records[0];
     }

@@ -14,10 +14,23 @@ const incident = {
   sys_id: "a".repeat(32),
   number: "INC0098765",
   short_description: "Example network issue",
+  description: "Synthetic scenario with an unconfirmed cause. Recorded workaround: use the approved document portal.",
+  impact: "2",
+  urgency: "2",
+  close_notes: "Recorded resolution guidance, not a verified fix for another incident.",
+  comments: "Excluded customer comment",
+  work_notes: "Excluded internal journal entry",
+  caller_id: { value: "private-caller", display_value: "Private caller" },
+  u_private_detail: "Excluded custom field",
   sys_updated_on: new Date().toISOString(),
 };
 const oldIncident = { ...incident, sys_id: "b".repeat(32), number: "INC0000001", sys_updated_on: "2018-01-01 00:00:00" };
-const change = { ...incident, sys_id: "c".repeat(32), number: "CHG0098765" };
+const change = {
+  ...incident, sys_id: "c".repeat(32), number: "CHG0098765",
+  description: "Synthetic change description",
+  type: "normal", risk: "moderate", state: "-2",
+  start_date: "2026-10-29 12:00:00", end_date: "2026-10-29 13:00:00",
+};
 const oldChange = { ...oldIncident, sys_id: "d".repeat(32), number: "CHG0000001" };
 let source;
 let server;
@@ -44,6 +57,7 @@ before(async () => {
     if (number) records = records.filter((record) => record.number === number);
     if (query.includes(boundary)) records = records.filter((record) => record !== oldIncident && record !== oldChange);
     res.setHeader("Content-Type", "application/json");
+    // Over-return fields deliberately so tests also verify the server's response projection.
     res.end(JSON.stringify({ result: upstreamResult === undefined ? records : upstreamResult }));
   }).listen(0, "127.0.0.1");
   await once(source, "listening");
@@ -243,6 +257,51 @@ test("change reads use GET, the same time boundary and links to returned source 
   const old = await rpc("tools/call", { name: "get_change", arguments: { number: oldChange.number } });
   assert.equal(old.result.isError, true);
   assert.match(old.result.content[0].text, /not found within the last six months/);
+});
+
+test("all record reads request and return explicit field sets, retaining supported detail evidence", async () => {
+  const incidentList = ["sys_id", "number", "short_description", "priority", "state", "assigned_to", "assignment_group", "opened_at", "category", "sys_updated_on"];
+  const changeList = ["sys_id", "number", "short_description", "type", "risk", "state", "start_date", "end_date", "assigned_to", "assignment_group", "sys_updated_on"];
+  for (const [name, record, table, fields] of [
+    ["search_incidents", incident, "incident", incidentList],
+    ["get_incident", incident, "incident", [...incidentList, "description", "impact", "urgency", "close_notes"]],
+    ["search_changes", change, "change_request", changeList],
+    ["get_change", change, "change_request", [...changeList, "description", "impact"]],
+  ]) {
+    const args = name.startsWith("get_") ? { number: record.number } : {};
+    const response = await rpc("tools/call", { name, arguments: args });
+    assert.notEqual(response.result.isError, true);
+    const query = requests.at(-1).url.searchParams;
+    assert.deepEqual(query.get("sysparm_fields").split(","), fields, name);
+    assert.ok(query.get("sysparm_query").startsWith(`${boundary}^`), name);
+    assert.equal(requests.at(-1).method, "GET");
+    const data = JSON.parse(response.result.content[0].text);
+    const selected = Object.fromEntries(fields.filter((field) => Object.hasOwn(record, field)).map((field) => [field, record[field]]));
+    const expected = { ...selected, source_url: `${process.env.SERVICENOW_INSTANCE}/${table}.do?sys_id=${record.sys_id}` };
+    assert.deepEqual(data, name.startsWith("search_") ? [expected] : expected, name);
+    for (const excluded of ["comments", "work_notes", "caller_id", "u_private_detail"]) {
+      assert.equal(Object.hasOwn(Array.isArray(data) ? data[0] : data, excluded), false, `${name}: ${excluded}`);
+    }
+  }
+});
+
+test("detail projection preserves missing, null and empty evidence without inventing fields", async () => {
+  upstreamResult = [{
+    sys_id: incident.sys_id, number: incident.number, description: incident.description,
+    impact: null, close_notes: "", comments: incident.comments,
+    source_url: "https://unrelated.example.invalid/wrong",
+  }];
+  try {
+    const response = await rpc("tools/call", { name: "get_incident", arguments: { number: incident.number } });
+    assert.notEqual(response.result.isError, true);
+    assert.deepEqual(JSON.parse(response.result.content[0].text), {
+      sys_id: incident.sys_id, number: incident.number, description: incident.description,
+      impact: null, close_notes: "",
+      source_url: `${process.env.SERVICENOW_INSTANCE}/incident.do?sys_id=${incident.sys_id}`,
+    });
+  } finally {
+    upstreamResult = undefined;
+  }
 });
 
 test("supports MCP initialization without resources and reports upstream failures safely", async () => {
