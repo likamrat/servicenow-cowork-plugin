@@ -41,7 +41,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes"]) {
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0"$/m);
+    assert.match(text, /^  version: "1\.0\.0"$/m);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
     }

@@ -150,6 +150,7 @@ test("change reads use GET, the same time boundary and links to returned source 
 test("supports MCP initialization without resources and reports upstream failures safely", async () => {
   const initialized = await rpc("initialize", { protocolVersion: "2025-03-26" });
   assert.ok(initialized.result.capabilities.tools);
+  assert.equal(initialized.result.serverInfo.version, "1.0.0");
   const notification = await fetch(`${endpoint}/mcp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -199,7 +200,7 @@ test("plugin package matches live tool input schemas and leaves its public URL u
   }
   for (const skill of manifest.agentSkills) {
     const text = fs.readFileSync(path.join(root, skill.folder, "SKILL.md"), "utf8");
-    assert.match(text, /^  version: "1\.0"$/m, "Skill versions remain 1.0 unless explicitly changed");
+    assert.match(text, /^  version: "1\.0\.0"$/m, "Skills use release version 1.0.0");
     const heading = text.match(/^# (.+)$/m)?.[1];
     assert.ok(heading, "Each skill has a readable title");
     assert.doesNotMatch(heading, /\b(demo|ignite|testing|preview)\b/i);

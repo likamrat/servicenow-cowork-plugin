@@ -34,21 +34,23 @@ function assertArchiveIntegrity(zip) {
   }
 }
 
-test("plugin ZIP has reproducible bytes, valid entries, both skills and unchanged versions", () => {
+test("plugin ZIP has reproducible bytes, valid entries, both skills and aligned release versions", () => {
   const bytes = buildPlugin();
   assert.deepEqual(buildPlugin(), bytes);
   const zip = new AdmZip(bytes);
   assertArchiveIntegrity(zip);
   assert.deepEqual(zip.getEntries().map((entry) => entry.entryName).sort(), [...PLUGIN_FILES, "LICENSE", "NOTICE"].sort());
   const packaged = JSON.parse(zip.readAsText("manifest.json"));
-  assert.equal(packaged.version, "1.0.2");
+  assert.equal(packaged.version, "1.0.0");
+  assert.equal(packaged.manifestVersion, "1.28", "The Microsoft manifest schema has its own version");
+  assert.equal(JSON.parse(readSource("mcp-server/package.json")).version, "1.0.0");
   assert.equal(packaged.id, "");
   assert.equal(packaged.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl, "");
   assert.equal(packaged.agentConnectors[0].toolSource.remoteMcpServer.authorization.type, "None");
   assert.deepEqual(JSON.parse(zip.readAsText("mcp-tools.json")), JSON.parse(readSource("plugin/mcp-tools.json")));
   for (const skill of packaged.agentSkills) {
     const file = `${skill.folder.replace(/^\.\//, "")}/SKILL.md`;
-    assert.match(zip.readAsText(file), /^  version: "1\.0"$/m);
+    assert.match(zip.readAsText(file), /^  version: "1\.0\.0"$/m);
     assert.equal(zip.readAsText(file), readSource(`plugin/${file}`).toString());
   }
   for (const name of ["LICENSE", "NOTICE"]) assert.equal(zip.readAsText(name), readSource(name).toString());
