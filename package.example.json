@@ -1,0 +1,8 @@
+{
+  "appId": "",
+  "mcpServerUrl": "https://mcp.example.invalid/mcp",
+  "websiteUrl": "https://project.example.invalid",
+  "privacyUrl": "https://project.example.invalid/privacy",
+  "termsOfUseUrl": "https://project.example.invalid/terms",
+  "acknowledgeUnauthenticatedEndpoint": false
+}

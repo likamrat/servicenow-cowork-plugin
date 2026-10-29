@@ -1,0 +1,24 @@
+{
+  "name": "servicenow-mcp-server",
+  "version": "1.0.0",
+  "description": "Read-only ServiceNow MCP server and Microsoft Copilot Cowork package tools",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=24" },
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "check": "node --check src/server.js && node --check scripts/package.js && node --check scripts/distribution.js && node --check scripts/icons.js",
+    "package": "node scripts/package.js",
+    "icons": "node scripts/icons.js",
+    "check:distribution": "node scripts/distribution.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "adm-zip": "^0.5.16"
+  }
+}
