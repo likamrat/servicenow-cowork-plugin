@@ -13,6 +13,8 @@ Supply these variables through a protected process environment or secret manager
 | `SERVICENOW_USERNAME` | Account authorized to read incidents and changes |
 | `SERVICENOW_PASSWORD` | Account password |
 | `PORT` | An unused local port; default `3001` |
+| `MCP_ALLOWED_HOSTS` | Additional proxy hostnames, comma-separated; no scheme or port |
+| `MCP_ALLOWED_ORIGINS` | Allowed browser origins, comma-separated; exact HTTP(S) origins |
 
 Keep credentials out of chat, shell history, files, logs and packages.
 The server does **not** load `.env` files; `.env.example` is a reference only.
@@ -30,6 +32,12 @@ HTTP `200` means connected; `503` means the check failed.
 
 Cowork needs a reachable HTTPS endpoint ending in `/mcp`.
 You provide the hosting; this project does not provision it.
+
+Add the hostname your proxy sends in `Host` to `MCP_ALLOWED_HOSTS`; loopback hosts
+are allowed by default. `X-Forwarded-Host` is not trusted.
+
+Non-browser clients may omit `Origin`. Requests carrying it need an exact match
+in `MCP_ALLOWED_ORIGINS`; an empty list rejects every supplied origin.
 
 > **Access warning:** there is no client authentication or per-user authorization.
 > Anyone who can reach the endpoint can read through the configured account.

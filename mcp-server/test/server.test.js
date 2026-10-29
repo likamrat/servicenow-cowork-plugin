@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const { before, after, test } = require("node:test");
 const http = require("node:http");
+const net = require("node:net");
 const { once } = require("node:events");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -8,7 +9,7 @@ const path = require("node:path");
 const reads = ["search_incidents", "get_incident", "search_changes", "get_change"];
 const writes = ["create_incident", "update_incident", "resolve_incident", "assign_incident", "create_change", "approve_change"];
 const requests = [];
-const boundary = "sys_updated_on>javascript:gs.beginningOfLast6Months()";
+const boundary = "sys_updated_on>javascript:gs.monthsAgo(6)";
 const incident = {
   sys_id: "a".repeat(32),
   number: "INC0098765",
@@ -17,6 +18,7 @@ const incident = {
 };
 const oldIncident = { ...incident, sys_id: "b".repeat(32), number: "INC0000001", sys_updated_on: "2018-01-01 00:00:00" };
 const change = { ...incident, sys_id: "c".repeat(32), number: "CHG0098765" };
+const oldChange = { ...oldIncident, sys_id: "d".repeat(32), number: "CHG0000001" };
 let source;
 let server;
 let endpoint;
@@ -37,10 +39,10 @@ before(async () => {
       return res.end(JSON.stringify({ error: "private-upstream-detail" }));
     }
     const query = url.searchParams.get("sysparm_query") || "";
-    let records = url.pathname.endsWith("/change_request") ? [change] : [incident, oldIncident];
+    let records = url.pathname.endsWith("/change_request") ? [change, oldChange] : [incident, oldIncident];
     const number = query.match(/(?:^|\^)number=([A-Z]+\d+)(?:\^|$)/)?.[1];
     if (number) records = records.filter((record) => record.number === number);
-    if (query.includes(boundary)) records = records.filter((record) => record !== oldIncident);
+    if (query.includes(boundary)) records = records.filter((record) => record !== oldIncident && record !== oldChange);
     res.setHeader("Content-Type", "application/json");
     res.end(JSON.stringify({ result: upstreamResult === undefined ? records : upstreamResult }));
   }).listen(0, "127.0.0.1");
@@ -48,6 +50,8 @@ before(async () => {
   process.env.SERVICENOW_INSTANCE = `http://127.0.0.1:${source.address().port}`;
   process.env.SERVICENOW_USERNAME = "test-user";
   process.env.SERVICENOW_PASSWORD = "test-only";
+  process.env.MCP_ALLOWED_HOSTS = "mcp.example.invalid";
+  process.env.MCP_ALLOWED_ORIGINS = "https://client.example.invalid";
   const { app } = require("../src/server");
   server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
@@ -68,6 +72,96 @@ async function rpc(method, params = {}) {
   assert.equal(response.status, 200);
   return response.json();
 }
+
+async function requestWithHeaders(method, pathname, headers, body) {
+  const url = new URL(endpoint);
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: url.hostname, port: url.port, path: pathname, method, setHost: false,
+      headers: {
+        ...(body === undefined ? {} : { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) }),
+        ...headers,
+      },
+    }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => { text += chunk; });
+      res.on("end", () => resolve({ status: res.statusCode, text }));
+    });
+    req.on("error", reject);
+    req.end(body);
+  });
+}
+
+test("rejects untrusted or ambiguous hosts and origins before parsing or upstream access", async () => {
+  const host = new URL(endpoint).host;
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search_incidents" } });
+  const rejected = [
+    { Host: "untrusted.example.invalid" },
+    { Host: "untrusted.example.invalid", Origin: "http://untrusted.example.invalid" },
+    { Host: "untrusted.example.invalid", "X-Forwarded-Host": host },
+    { Host: "localhost.evil.example.invalid" },
+    { Host: `${host}/path` },
+    { Host: "localhost:0" },
+    { Host: "localhost:65536" },
+    { Host: host, Origin: "https://untrusted.example.invalid" },
+    { Host: host, Origin: "https://client.example.invalid.evil.example.invalid" },
+    { Host: host, Origin: "http://client.example.invalid" },
+    { Host: host, Origin: "https://client.example.invalid/path" },
+    { Host: host, Origin: "null" },
+    { Host: host, Origin: "" },
+    { Host: host, Origin: ["https://client.example.invalid", "https://untrusted.example.invalid"] },
+  ];
+  for (const headers of rejected) {
+    const count = requests.length;
+    for (const [method, pathname, payload] of [
+      ["POST", "/mcp", body], ["GET", "/health", undefined],
+    ]) {
+      const response = await requestWithHeaders(method, pathname, headers, payload);
+      assert.equal(response.status, 403, JSON.stringify(headers));
+      assert.match(JSON.parse(response.text).error, /not allowed/);
+    }
+    assert.equal(requests.length, count, "Rejected requests must not reach ServiceNow");
+  }
+  const malformed = await requestWithHeaders("POST", "/mcp", { Host: "untrusted.example.invalid" }, "{");
+  assert.equal(malformed.status, 403, "The boundary guard runs before the JSON body parser");
+  for (const [rawHosts, status] of [
+    ["", 400],
+    [`Host: ${host}\r\nHost: untrusted.example.invalid\r\n`, 403],
+  ]) {
+    const count = requests.length;
+    const response = await new Promise((resolve, reject) => {
+      const socket = net.createConnection({ host: "127.0.0.1", port: Number(new URL(endpoint).port) }, () => {
+        socket.write(`GET /health HTTP/1.1\r\n${rawHosts}Connection: close\r\n\r\n`);
+      });
+      let text = "";
+      socket.setEncoding("utf8");
+      socket.setTimeout(5000, () => socket.destroy(new Error("Timed out reading HTTP rejection")));
+      socket.on("data", (chunk) => { text += chunk; });
+      socket.on("end", () => resolve(text));
+      socket.on("error", reject);
+    });
+    assert.ok(response.startsWith(`HTTP/1.1 ${status} `), "Missing or duplicate Host headers are rejected before dispatch");
+    assert.equal(requests.length, count);
+  }
+});
+
+test("accepts loopback and explicitly configured proxy hosts with approved or absent origins", async () => {
+  const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "search_incidents" } });
+  for (const headers of [
+    { Host: new URL(endpoint).host },
+    { Host: "localhost" },
+    { Host: "[::1]" },
+    { Host: "mcp.example.invalid" },
+    { Host: "MCP.EXAMPLE.INVALID:443", Origin: "https://client.example.invalid" },
+  ]) {
+    const count = requests.length;
+    const response = await requestWithHeaders("POST", "/mcp", headers, body);
+    assert.equal(response.status, 200);
+    assert.notEqual(JSON.parse(response.text).result.isError, true);
+    assert.equal(requests.length, count + 1);
+  }
+});
 
 test("advertises only read tools and rejects every write before contacting ServiceNow", async () => {
   const listed = await rpc("tools/list");
@@ -141,10 +235,14 @@ test("change reads use GET, the same time boundary and links to returned source 
     assert.equal(requests.at(-1).method, "GET");
     assert.ok(requests.at(-1).url.searchParams.get("sysparm_query").startsWith(`${boundary}^`));
     if (name === "search_changes") {
+      assert.deepEqual(data.map((entry) => entry.number), [change.number]);
       assert.equal(requests.at(-1).url.searchParams.get("sysparm_limit"), "20");
       assert.ok(requests.at(-1).url.searchParams.get("sysparm_query").endsWith("^ORDERBYDESCsys_updated_on"));
     }
   }
+  const old = await rpc("tools/call", { name: "get_change", arguments: { number: oldChange.number } });
+  assert.equal(old.result.isError, true);
+  assert.match(old.result.content[0].text, /not found within the last six months/);
 });
 
 test("supports MCP initialization without resources and reports upstream failures safely", async () => {
