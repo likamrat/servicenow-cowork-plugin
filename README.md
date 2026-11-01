@@ -28,14 +28,16 @@ Exact lookups return selected detail fields. Unlisted fields, including
 
 ## Architecture
 
-The plugin ZIP contains two skills and a remote MCP connector. Its MCP server
-runs separately; this repository includes both.
+This repository is the thin Cowork client: two skills, the connector manifest,
+generated tool descriptions and package tooling. The separately operated
+[ServiceNow MCP](https://github.com/likamrat/servicenow-mcp) owns the backend.
+Use its **read-only HTTP entrypoint**, never an administrative endpoint.
 
 ```mermaid
 flowchart TD
     Cowork["Copilot Cowork<br/>Incident and change skills"]
     Endpoint["Your HTTPS endpoint"]
-    MCP["Read-only MCP server<br/>No client authentication"]
+    MCP["Shared ServiceNow MCP<br/>Read-only HTTP entrypoint"]
     ServiceNow["ServiceNow Table API"]
     M365["Authorized Microsoft 365 tools"]
 
@@ -50,7 +52,6 @@ flowchart TD
 From the repository root, with Node.js 24 or later. No credentials are needed:
 
 ```sh
-cd mcp-server
 npm ci
 npm run check
 npm test
@@ -60,12 +61,13 @@ npm run package -- --template
 
 This creates `dist/template/servicenow-for-cowork.zip` at the repository root.
 It is unconfigured and cannot be installed as-is. Follow [SETUP.md](SETUP.md)
-to connect your instance, build a configured package and install it in Cowork.
+to select an approved shared MCP endpoint, build a configured package and install
+it in Cowork.
 Adding MCP to a coding assistant alone does not install it in Cowork.
 
-**Access warning:** the server has no client authentication. Anyone who can reach
-it can read through the configured ServiceNow account. Do not expose sensitive
-records without a reviewed authentication and authorization design.
+**Access warning:** this connector uses no client authentication. Anyone who can
+reach its endpoint can read through the server's configured ServiceNow account.
+Personal plugin visibility does not protect the endpoint.
 
 ## Agent installation prompt
 
@@ -76,15 +78,15 @@ Follow SETUP.md to prepare this plugin for my Microsoft Copilot Cowork.
 Run the documented checks and build the template first. Preserve the read-only
 tools, limits and skills; report failures.
 
-Ask for my instance origin and the non-secret package settings in
-package.example.json. Keep them in package.local.json, not the source manifest.
-Have me supply credentials privately through a protected process environment
-or secret manager, never in chat, commands, files or packages.
-
-Explain the unauthenticated-endpoint risk before building a configured ZIP.
+Recover the existing installed app identity and connection URL before repairing
+a connection. Use the shared ServiceNow MCP's read-only HTTP entrypoint and the
+non-secret settings in package.example.json. Keep deployment settings in
+package.local.json; credentials belong only in the backend's protected setup.
+Check the pinned shared tool contract and explain the unauthenticated-endpoint risk.
 Obtain my explicit approval separately for deployment, access changes, sign-in
 and Cowork installation. Do not assume permissions or expose sensitive records.
-Follow SETUP.md's Cowork verification steps; local tests do not prove routing.
+Follow SETUP.md's native Cowork verification; a successful source-backed empty
+result is valid, but missing tools or failed requests are not empty results.
 Do not push or publish.
 ```
 

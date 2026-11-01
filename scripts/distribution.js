@@ -1,20 +1,18 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { checkContract } = require("./contract");
 
-const ROOT = path.resolve(__dirname, "..", "..");
+const ROOT = path.resolve(__dirname, "..");
 const PLUGIN_FILES = [
   "manifest.json", "mcp-tools.json", "color.png", "outline.png",
   "skills/servicenow-incidents/SKILL.md", "skills/servicenow-changes/SKILL.md",
 ];
 const SOURCE_FILES = [
   ".gitattributes", ".gitignore", "LICENSE", "NOTICE", "README.md", "SETUP.md",
-  "package.example.json",
-  "mcp-server/.env.example", "mcp-server/.gitignore",
-  "mcp-server/package.json", "mcp-server/package-lock.json",
-  "mcp-server/src/server.js",
-  "mcp-server/scripts/distribution.js", "mcp-server/scripts/package.js", "mcp-server/scripts/icons.js",
-  "mcp-server/test/server.test.js", "mcp-server/test/package.test.js",
-  "mcp-server/test/skills.test.js", "mcp-server/test/skill-cases.json",
+  "package.example.json", "package.json", "package-lock.json",
+  "scripts/distribution.js", "scripts/package.js", "scripts/icons.js", "scripts/contract.js",
+  "test/package.test.js", "test/contract.test.js",
+  "test/skills.test.js", "test/skill-cases.json",
   ...PLUGIN_FILES.map((file) => `plugin/${file}`),
 ];
 
@@ -68,6 +66,8 @@ function readSource(file, root = ROOT) {
 
 function checkDistribution(root = ROOT) {
   for (const file of SOURCE_FILES) readSource(file, root);
+  const { serviceNowMcp } = JSON.parse(readSource("package.json", root));
+  checkContract(readSource("plugin/mcp-tools.json", root), serviceNowMcp);
   const manifest = JSON.parse(readSource("plugin/manifest.json", root));
   if (manifest.id || manifest.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl ||
       ["websiteUrl", "privacyUrl", "termsOfUseUrl"].some((key) => manifest.developer[key])) {

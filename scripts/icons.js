@@ -38,7 +38,7 @@ function icon(size, outline) {
 
 if (require.main === module) {
   for (const [name, size, outline] of [["color", 192, false], ["outline", 32, true]]) {
-    fs.writeFileSync(path.join(__dirname, "..", "..", "plugin", `${name}.png`), icon(size, outline));
+    fs.writeFileSync(path.join(__dirname, "..", "plugin", `${name}.png`), icon(size, outline));
   }
   console.log("Generated neutral ticket icons (192px color, 32px white/transparent outline).");
 }

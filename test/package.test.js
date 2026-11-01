@@ -3,7 +3,6 @@ const { test } = require("node:test");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
-const { spawnSync } = require("node:child_process");
 const { crc32 } = require("node:zlib");
 const AdmZip = require("adm-zip");
 const { buildPlugin, buildSource, configuredManifest } = require("../scripts/package");
@@ -43,7 +42,7 @@ test("plugin ZIP has reproducible bytes, valid entries, both skills and aligned 
   const packaged = JSON.parse(zip.readAsText("manifest.json"));
   assert.equal(packaged.version, "1.0.0");
   assert.equal(packaged.manifestVersion, "1.28", "The Microsoft manifest schema has its own version");
-  assert.equal(JSON.parse(readSource("mcp-server/package.json")).version, "1.0.0");
+  assert.equal(JSON.parse(readSource("package.json")).version, "1.0.0");
   assert.equal(packaged.id, "");
   assert.equal(packaged.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl, "");
   assert.equal(packaged.agentConnectors[0].toolSource.remoteMcpServer.authorization.type, "None");
@@ -139,92 +138,6 @@ test("distribution guard rejects concrete deployment artifacts without echoing t
   assert.doesNotThrow(() => checkText("fixture", "https://mcp.example.invalid/mcp"));
 });
 
-test("instance configuration fails early without disclosing invalid values or contacting a service", () => {
-  for (const instance of [
-    "", "not-an-origin", "http://servicenow.example.invalid",
-    "https://user:password" + "@servicenow.example.invalid",
-    "https://servicenow.example.invalid/path",
-    "https://servicenow.example.invalid?token=placeholder",
-    "https://servicenow.example.invalid#fragment",
-  ]) {
-    const result = spawnSync(process.execPath, ["-e", "require('./src/server')"], {
-      cwd: path.join(ROOT, "mcp-server"),
-      env: { ...process.env, MCP_ALLOWED_HOSTS: "", MCP_ALLOWED_ORIGINS: "", SERVICENOW_INSTANCE: instance, SERVICENOW_USERNAME: "test-user", SERVICENOW_PASSWORD: "test-only" },
-      encoding: "utf8",
-    });
-    assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /SERVICENOW_INSTANCE/);
-    assert.doesNotMatch(result.stderr, /test-only|user:password|token=placeholder/);
-  }
-});
-
-test("request boundary configuration rejects wildcard, malformed and ambiguous entries", () => {
-  for (const [name, values] of Object.entries({
-    MCP_ALLOWED_HOSTS: [
-      "*", ".", "mcp..example.invalid", "*.example.invalid", "https://mcp.example.invalid",
-      "mcp.example.invalid:443", "mcp.example.invalid/path", "mcp.example.invalid,",
-    ],
-    MCP_ALLOWED_ORIGINS: [
-      "*", "null", "https://client.example.invalid/path",
-      "https://client.example.invalid/", "https://client.example.invalid" + ",",
-      "https://user:password" + "@client.example.invalid",
-    ],
-  })) {
-    for (const value of values) {
-      const result = spawnSync(process.execPath, ["-e", "require('./src/server')"], {
-        cwd: path.join(ROOT, "mcp-server"),
-        env: {
-          ...process.env, SERVICENOW_INSTANCE: "https://servicenow.example.invalid",
-          SERVICENOW_USERNAME: "test-user", SERVICENOW_PASSWORD: "test-only",
-          MCP_ALLOWED_HOSTS: "", MCP_ALLOWED_ORIGINS: "", [name]: value,
-        },
-        encoding: "utf8",
-      });
-      assert.notEqual(result.status, 0);
-      assert.ok(result.stderr.includes(name));
-      assert.doesNotMatch(result.stderr, /test-only|user:password/);
-    }
-  }
-});
-
-test("default origin policy permits machine clients but rejects browser origins", () => {
-  const result = spawnSync(process.execPath, ["-e", `
-    const { once } = require("node:events");
-    const { app } = require("./src/server");
-    (async () => {
-      const server = app.listen(0, "127.0.0.1");
-      try {
-        await once(server, "listening");
-        const statuses = [];
-        for (const origin of [undefined, "https://client.example.invalid", "null"]) {
-          const response = await fetch("http://127.0.0.1:" + server.address().port + "/mcp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", ...(origin ? { Origin: origin } : {}) },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
-          });
-          statuses.push(response.status);
-          await response.arrayBuffer();
-        }
-        console.log(JSON.stringify(statuses));
-      } finally {
-        server.closeAllConnections();
-        await new Promise(resolve => server.close(resolve));
-      }
-    })().catch(error => { console.error(error.message); process.exitCode = 1; });
-  `], {
-    cwd: path.join(ROOT, "mcp-server"),
-    env: {
-      ...process.env, SERVICENOW_INSTANCE: "https://servicenow.example.invalid",
-      SERVICENOW_USERNAME: "test-user", SERVICENOW_PASSWORD: "test-only",
-      MCP_ALLOWED_HOSTS: "", MCP_ALLOWED_ORIGINS: "",
-    },
-    encoding: "utf8",
-    timeout: 10000,
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), [200, 403, 403]);
-});
-
 test("archive excludes unexpected files and fails if an allowlisted file is a symlink", (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "cowork-package-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -238,6 +151,11 @@ test("archive excludes unexpected files and fails if an allowlisted file is a sy
   const source = new AdmZip(buildSource(root));
   assert.equal(source.getEntry("package.local.json"), null);
   assert.equal(source.getEntry("plugin/private-notes.txt"), null);
+  const toolsPath = path.join(root, "plugin", "mcp-tools.json");
+  const tools = fs.readFileSync(toolsPath);
+  fs.appendFileSync(toolsPath, " ");
+  assert.throws(() => buildPlugin({ root }), /pinned shared MCP contract/);
+  fs.writeFileSync(toolsPath, tools);
   // Junction creation is available on Windows without file-symlink privileges.
   const skill = path.join(root, "plugin", "skills", "servicenow-changes");
   const moved = path.join(root, "moved-skill");

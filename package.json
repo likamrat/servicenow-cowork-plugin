@@ -1,0 +1,26 @@
+{
+  "name": "servicenow-cowork-plugin",
+  "version": "1.0.0",
+  "description": "Microsoft Copilot Cowork skills and packaging for the shared ServiceNow MCP",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check scripts/package.js && node --check scripts/distribution.js && node --check scripts/icons.js && node --check scripts/contract.js",
+    "package": "node scripts/package.js",
+    "icons": "node scripts/icons.js",
+    "contract": "node scripts/contract.js",
+    "check:distribution": "node scripts/distribution.js"
+  },
+  "serviceNowMcp": {
+    "repository": "https://github.com/likamrat/servicenow-mcp",
+    "version": "1.0.0",
+    "revision": "18341f93e3eab8cab32162345e7b8519f66f8421",
+    "contract": "contracts/cowork-tools.json",
+    "sha256": "0da5f1eb731a69c7d14079ded76a382976a0ffb61ad3feafe94c9bd2c6af1548"
+  },
+  "devDependencies": {
+    "adm-zip": "0.5.18"
+  }
+}
