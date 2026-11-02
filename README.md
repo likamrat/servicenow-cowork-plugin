@@ -5,6 +5,17 @@ ServiceNow incidents and change requests. It brings recent ticket details and
 original source links into IT investigations, alongside any Microsoft 365 context
 available through Cowork's separately authorized tools.
 
+## Get started
+
+This client uses authorization `None`. The shared MCP's supported remote Cowork
+route requires OAuth, which this package does not provide. Its compatible legacy
+read-only server is for local use only.
+
+[Setup](SETUP.md) explains package preparation and the prerequisites for installing
+against an existing, separately approved compatible backend. This repository does
+not supply that deployment. Do not expose the legacy listener or remove server
+authentication to connect this package.
+
 ## Included skills
 
 - [Incidents](plugin/skills/servicenow-incidents/SKILL.md): investigate workplace IT symptoms or look up a ticket.
@@ -31,64 +42,8 @@ Exact lookups return selected detail fields. Unlisted fields, including
 This repository is the thin Cowork client: two skills, the connector manifest,
 generated tool descriptions and package tooling. The separately operated
 [ServiceNow MCP](https://github.com/likamrat/servicenow-mcp) owns the backend.
-Use its **read-only HTTP entrypoint**, never an administrative endpoint.
-
-```mermaid
-flowchart TD
-    Cowork["Copilot Cowork<br/>Incident and change skills"]
-    Endpoint["Your HTTPS endpoint"]
-    MCP["Shared ServiceNow MCP<br/>Read-only HTTP entrypoint"]
-    ServiceNow["ServiceNow Table API"]
-    M365["Authorized Microsoft 365 tools"]
-
-    Cowork -->|"MCP requests"| Endpoint
-    Endpoint -->|"Loopback HTTP"| MCP
-    MCP -->|"HTTPS GET<br/>Configured account"| ServiceNow
-    Cowork -.->|"Requested context"| M365
-```
-
-## Get started
-
-From the repository root, with Node.js 24 or later. No credentials are needed:
-
-```sh
-npm ci
-npm run check
-npm test
-npm run check:distribution
-npm run package -- --template
-```
-
-This creates `dist/template/servicenow-for-cowork.zip` at the repository root.
-It is unconfigured and cannot be installed as-is. Follow [SETUP.md](SETUP.md)
-to select an approved shared MCP endpoint, build a configured package and install
-it in Cowork.
-Adding MCP to a coding assistant alone does not install it in Cowork.
-
-**Access warning:** this connector uses no client authentication. Anyone who can
-reach its endpoint can read through the server's configured ServiceNow account.
-Personal plugin visibility does not protect the endpoint.
-
-## Agent installation prompt
-
-Paste into your coding agent from this checkout:
-
-```text
-Follow SETUP.md to prepare this plugin for my Microsoft Copilot Cowork.
-Run the documented checks and build the template first. Preserve the read-only
-tools, limits and skills; report failures.
-
-Recover the existing installed app identity and connection URL before repairing
-a connection. Use the shared ServiceNow MCP's read-only HTTP entrypoint and the
-non-secret settings in package.example.json. Keep deployment settings in
-package.local.json; credentials belong only in the backend's protected setup.
-Check the pinned shared tool contract and explain the unauthenticated-endpoint risk.
-Obtain my explicit approval separately for deployment, access changes, sign-in
-and Cowork installation. Do not assume permissions or expose sensitive records.
-Follow SETUP.md's native Cowork verification; a successful source-backed empty
-result is valid, but missing tools or failed requests are not empty results.
-Do not push or publish.
-```
+Its operator manages ServiceNow credentials, hosting and endpoint access.
+The package contains no server and supplies no Microsoft 365 connection.
 
 ## Credits and license
 

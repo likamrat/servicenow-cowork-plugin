@@ -1,117 +1,169 @@
 # Cowork plugin setup
 
-Start with the [local checks](README.md#get-started), using Node.js 24+.
-This repository builds the client package; it does not start a backend,
-provision hosting, change access or install anything in Cowork.
+This guide covers the four-tool, read-only package. Its connector uses
+authorization `None`, so it cannot use the shared MCP's supported remote Cowork
+route, which requires OAuth. The compatible legacy server is loopback-only.
+There is no supported remote setup for this package with that shared backend.
 
-## Select the shared MCP endpoint
+## Before you start
 
-The [shared ServiceNow MCP](https://github.com/likamrat/servicenow-mcp) owns
-instance configuration, authentication and server operation. Use its read-only
-HTTP entrypoint with an account authorized for the intended instance. Preserve
-the four incident/change tools, six-month updated-record restriction and
-20-result search limit. Administrative capabilities belong to a separate
-interface and must never be exposed as the Cowork endpoint.
+- A Microsoft 365 work account with Cowork access and permission to install
+  personal plugins. Your tenant's administrator controls that permission.
+- Node.js 24+ for the packaging and installation tools. If you are building the
+  package yourself, use Git to download this repository.
+- An existing, separately approved compatible backend before configuring or
+  installing a package. This repository does not supply that deployment.
 
-For an existing installation, first record its actual plugin/app identity,
-installed publication label, configured MCP URL, authentication type and
-matching uploaded package. Source examples and an enabled connection card
-do not establish the installed route. Keep any host-managed publication label
-separate from the source package version; do not silently change identity or
-bump/downgrade a version to repair connectivity.
+If an operator has already given you a configured ZIP for this client, confirm
+its endpoint and exposure approval with them, then skip to installation.
 
-Cowork requires a reachable HTTPS `/mcp` endpoint using Streamable HTTP.
-[Microsoft documents a development tunnel for a local server](https://learn.microsoft.com/en-us/copilot/cowork/cowork-plugin-development#test-a-connector-against-a-local-mcp-server);
-the server need not be cloud-hosted. A tunnel still exposes it externally and
-requires explicit approval. Use a separate restricted listener, not an existing
-administrative port. Record the tunnel owner, lifetime and stop procedure.
-Direct localhost, stdio and bundling server files in the ZIP do not provide
-that remote connection.
+## 1. Confirm the backend connection
 
-Keep credentials in the backend's protected environment or credential provider,
-never in this repository, package configuration, chat, logs or ZIPs.
+The shared MCP's [legacy read-only server](https://github.com/likamrat/servicenow-mcp/blob/main/docs/DEVELOPMENT.md#legacy-anonymous-read-only-server)
+(`npm start`, `src/server.js`) is for local compatibility checks. Keep it on
+loopback; tunneling it is not a supported Cowork deployment path. The shared
+backend's remote route needs a matching OAuth client, not this `None` package.
 
-## Build the plugin package
+Proceed with configuration and installation only if your operator already
+supplies a separately approved HTTPS `/mcp` endpoint using Streamable HTTP that
+is compatible with this client. The operator must verify the four incident/change
+tools, six-month updated-record restriction and 20-result search limit.
+If you do not have that backend, stop before the build and installation steps.
+The maintainer checks below can run without a live connection.
 
-> **Access warning:** the manifest uses authorization `None`. Anyone who can
-> reach the endpoint can read the exposed fields through its configured account.
-> Cowork's "Only you" visibility does not authenticate MCP requests. A private
-> tunnel's interactive login is not automatically compatible with Cowork.
-> Review supported access controls before exposing sensitive records.
+**Anyone who can reach a `None` endpoint can read its exposed fields through the
+configured ServiceNow account.** Personal installation or "Only you" visibility
+does not authenticate requests. Exposure approval does not add authentication,
+and this guide provides no secure hosting solution for an anonymous endpoint.
+Do not disable server authentication or point this package at an administrative
+listener. Direct localhost and stdio do not give Cowork a remote connection.
 
-Obtain separate approval for starting services, external access, sign-in and upload.
+Keep ServiceNow credentials in the backend's protected environment or credential
+provider, never in the package, local configuration, chat or logs.
 
-Copy [package.example.json](package.example.json) to `package.local.json` at the
-repository root. Replace the non-working examples:
+## 2. Build a configured package
 
-- `appId`: your app's UUID; keep it when updating the same app.
-- `mcpServerUrl`: your approved HTTPS `/mcp` endpoint.
-- `websiteUrl`, `privacyUrl`, `termsOfUseUrl`: your developer and policy pages.
+For a new checkout, run the commands below. If you already have a checkout,
+run only `npm ci` from its root:
+
+```sh
+git clone https://github.com/likamrat/servicenow-cowork-plugin.git
+cd servicenow-cowork-plugin
+npm ci
+```
+
+Copy `package.example.json` to `package.local.json` in the repository root.
+Replace the examples with:
+
+- `appId`: the app's UUID. For a new app, generate one with
+  `node -p "require('node:crypto').randomUUID()"`; keep the existing ID for updates.
+- `mcpServerUrl`: the operator-approved HTTPS `/mcp` URL.
+- `websiteUrl`, `privacyUrl`, `termsOfUseUrl`: your developer and policy pages,
+  required by the Microsoft 365 app manifest.
 
 Set `acknowledgeUnauthenticatedEndpoint` to `true` only after the operator approves
-the exposure. Keep credentials out of this file and leave `plugin/manifest.json` unchanged.
-
-From this repository root:
+the exposure. Leave `plugin/manifest.json` unchanged. From the repository root:
 
 ```sh
 npm run package -- --config package.local.json
 ```
 
-Output: `dist/configured/servicenow-for-cowork.zip` at the repository root.
-The build checks configuration syntax; it neither verifies the endpoint nor uploads anything.
+The output is `dist/configured/servicenow-for-cowork.zip`. The build checks local
+configuration and the pinned tool descriptions; it does not verify the endpoint,
+start a service or upload the package. Keep this configured ZIP and local settings
+private. The template and source ZIPs are not installable replacements.
 
-## Install and verify
+## 3. Install for your account
 
-Use the approved personal or tenant installation path in
-[Microsoft's Cowork guide](https://learn.microsoft.com/en-us/copilot/cowork/cowork-plugin-development).
-Upload the configured ZIP, not the template or source archive.
+Use the personal installation path in
+[Microsoft's Cowork plugin guide](https://learn.microsoft.com/en-us/copilot/cowork/cowork-plugin-development#step-7-test).
+Install Microsoft 365 Agents Toolkit if you do not already have it:
 
-1. Against the configured endpoint, verify MCP initialization and `tools/list`
-   expose exactly the four packaged tools. A health response alone is insufficient.
-2. After installation approval, use a fresh Cowork conversation for one read-only
-   incident search. Inspect actual tool execution and correlate it with the
-   restricted server's request to the intended ServiceNow instance. A successful
-   authenticated empty result is valid connectivity proof; do not create records
-   to make the check pass.
-3. If a record is returned, confirm its original source link belongs to the
-   intended instance. For a symptom-based request, inspect the selected tools.
-   Microsoft 365 citations require separately authorized Microsoft 365 tools.
+```sh
+npm install -g @microsoft/m365agentstoolkit-cli
+```
 
-Keep these checks read-only. Local tests do not prove Cowork routing or Microsoft
-365 access; the plugin supplies no Microsoft 365 connection.
+After approval to sign in and install, run these from the repository root.
+For a supplied ZIP, replace the file path with its location. Sign in with the
+work account you use for Cowork:
 
-Distinguish these outcomes: missing tools, unreachable endpoint, authentication
-or source-policy denial, successful empty query, successful returned records.
-Finding a skill without an MCP invocation proves neither a source read nor an
-empty instance. Diagnose the actual installed route before changing a connector.
-An assistant's suggestion of a different connector is not a diagnosis.
+```powershell
+atk auth login
+atk install --file-path "dist\configured\servicenow-for-cowork.zip" --scope Personal
+```
 
-## Shared tool contract
+Save the returned `TitleId` and `AppId` with the uploaded package. In **Plugins**,
+check the Cowork plugin list or **Manage all** for **ServiceNow for Cowork**.
+If your organization distributes plugins centrally, give the configured ZIP to
+your administrator for the approved tenant installation instead.
 
-`package.json` pins the shared MCP version and normalized SHA-256 of
-`contracts/cowork-tools.json`. `plugin/mcp-tools.json` is the generated client
-snapshot; package builds reject drift. Compare it with an approved shared checkout:
+Adding MCP to a coding assistant does not install this Cowork plugin.
+
+## 4. Make a first request
+
+Start a new Cowork conversation and ask:
+
+```text
+Find recent ServiceNow incidents with VPN in the title and include their source links.
+```
+
+Cowork should call `search_incidents` and return linked matches or explain that
+no matching recent titles were found. Returned links should belong to the intended
+ServiceNow instance. A successful empty search is valid; missing tools, denied
+access and failed requests are not empty results. Do not create a record to make
+the check pass.
+
+The plugin supplies no Microsoft 365 connection. Requests for Microsoft 365
+background require tools that are separately available and authorized in Cowork.
+
+## Updates and connection problems
+
+Before changing an existing installation, record its app identity, installed
+publication label, endpoint URL, authentication type and matching uploaded ZIP.
+Have the app owner apply a reviewed replacement through the original installation
+channel, retaining the app ID. Rebuilding a ZIP does not replace an installed app.
+Keep host publication labels separate from source versions; do not change either
+just to repair a connection.
+
+Client and backend updates are separate. Changing the endpoint URL or updating
+the backend does not give this client OAuth support or additional workflows.
+The server must continue to match the four-tool contract.
+
+If a request fails, ask the operator to check MCP initialization, `tools/list`
+and the request to the intended ServiceNow instance. Distinguish an unreachable
+endpoint, source-access denial and a successful empty query. An enabled card,
+a health response or a loaded skill alone does not prove a ServiceNow read.
+Diagnose the installed route before replacing connectors.
+
+## Maintainer checks
+
+These local checks need no ServiceNow credentials:
+
+```sh
+npm run check
+npm test
+npm run check:distribution
+```
+
+`package.json` pins the shared contract version and normalized SHA-256.
+To compare the generated `plugin/mcp-tools.json` with an approved backend checkout,
+replace the path below with that checkout's `contracts/cowork-tools.json`:
 
 ```powershell
 npm run contract -- --check ..\servicenow-mcp\contracts\cowork-tools.json
 ```
 
-Use `--sync` instead of `--check` to regenerate the snapshot from that pinned
-contract. Contract upgrades require an intentional version/hash review first.
-These commands are offline and never load server code or credentials.
-Cowork also discovers runtime tools through `tools/list`; updating the package
-alone does not update a running server.
+`--sync` regenerates the snapshot only from the pinned contract. Review the
+version and hash before an intentional upgrade. Cowork requires packaged tool
+descriptions that match the backend; dynamic discovery is host-dependent.
+Changing an endpoint or its `tools/list` does not add missing client capabilities.
 
-## Before sharing source
+For source distribution, run `npm run package -- --source` and review
+`dist/source/servicenow-for-cowork-source.zip` before approving publication.
+The scan is targeted, not a complete secret audit. Use the reviewed export for
+a new public repository rather than copying development history. Retain LICENSE
+and NOTICE in distributions.
 
-```sh
-npm run check:distribution
-npm run package -- --source
-```
-
-Review `dist/source/servicenow-for-cowork-source.zip` before separately approving
-publication. The scan is targeted, not a complete secret audit.
-
-For a new public repository, use the reviewed export rather than copying
-development history. Keep configured ZIPs and local settings private; retain
-LICENSE and NOTICE in any distribution.
+An assisting agent must preserve the read-only tools, limits and skills; report
+failures; and obtain separate approval for deployment, external access, access
+changes, sign-in and installation. Do not push or publish as part of setup.
