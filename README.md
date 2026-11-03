@@ -23,8 +23,16 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.8 aligns the package and skill metadata versions with this naming
-update while preserving the existing connector, tool contract and handoff notes.
+Release 1.0.9 improves natural-language incident discovery while preserving these
+names, the existing connector, tool contract and handoff notes.
+
+The [investigation workflow](plugin/skills/servicenow-incidents/references/investigation.md)
+translates business intent into related activities or symptoms before choosing
+literal title queries. The agent owns that reasoning; users need not know ticket
+wording. Two distinct targeted searches can fall back to one bounded recent-title
+sample, subject to source restrictions and requested filters. Explicit literal-title
+requests remain literal. Candidate inspection grounds relevance; empty matches
+prove neither instance-wide absence nor connection health.
 
 For a name-only assignment, the incident skill uses the current host's authorized
 Work IQ/directory capability, handles technical login/email internally, then
@@ -73,7 +81,8 @@ authorization does not imply permission to grant access.
 
 The first four ticket lookup tools are read-only and return source links. Ticket reads
 are limited to records updated within six months; searches return up to 20 matches,
-newest update first. Incident search is not semantic or full-record search.
+newest update first. The backend's incident search is not semantic or full-record
+search; the agent reasons about intent when selecting queries and inspecting results.
 
 Exact ticket lookups return selected detail fields. Unlisted fields, including
 `comments`, `work_notes` and `caller_id`, are excluded.

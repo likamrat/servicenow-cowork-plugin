@@ -11,7 +11,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.8"
+  version: "1.0.9"
 ---
 
 # ServiceNow incidents
@@ -33,18 +33,10 @@ Do not treat profile fields as role grants, password setup or change approval.
 ## Find and inspect incident evidence
 
 1. If the user supplies an incident number, call `get_incident` with that number.
-2. Otherwise, call `search_incidents` with a short, discriminating service,
-   application or symptom term.
-   Its `query` matches one literal substring of the short description (title),
-   not the full record or a semantic interpretation. Use at most three searches,
-   trying a different term or shortening the phrase after an empty result.
-   Search one term or phrase per call, not the whole sentence or several
-   alternatives. Add only requested state, priority or assignee filters;
-   they narrow together.
-3. Stop searching when plausible candidates appear. Use `get_incident` to
-   inspect up to three candidates before claiming a connection. Compare their
-   affected service, symptoms, current state, impact, and recorded workaround
-   with the user's problem. A keyword match alone does not establish a cause.
+2. Otherwise, read [Natural-language investigation](references/investigation.md)
+   before the first search. Follow its intent translation, bounded retrieval
+   and candidate inspection steps; the user supplies the business question,
+   not the ticket vocabulary.
 
 Searches return at most 20 records, newest update first. All incident reads
 include only records updated within the last six months, including exact-number

@@ -8,6 +8,7 @@ const PLUGIN_FILES = [
   "skills/servicenow-incidents/SKILL.md", "skills/servicenow-changes/SKILL.md",
   "skills/servicenow-incidents/references/assignment.md", "skills/servicenow-users/SKILL.md",
   "skills/servicenow-incidents/references/handoff.md",
+  "skills/servicenow-incidents/references/investigation.md",
 ];
 const SOURCE_FILES = [
   ".gitattributes", ".gitignore", "LICENSE", "NOTICE", "README.md", "SETUP.md",

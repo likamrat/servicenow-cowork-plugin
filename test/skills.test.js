@@ -9,6 +9,12 @@ const contracts = {
   symptom_trigger: /description: \|\n  Investigate workplace IT symptoms before giving troubleshooting or team[\s\S]*even without ServiceNow or ticket[\s\S]*terminology/,
   evidence_first: /## Evidence first\n\nWithin the user's source restrictions, check the configured ServiceNow connection\nbefore diagnosing an IT problem or drafting team guidance/,
   literal_search: /one literal substring[\s\S]*not the full record or a semantic interpretation/,
+  intent_translation: /Translate the user's business intent[\s\S]*related activities, components or observable symptoms[\s\S]*search hypotheses, not facts/,
+  agent_owned_search: /Choose search terms yourself[\s\S]*not required to know ticket wording/,
+  diverse_search: /At most two targeted searches[\s\S]*meaningfully different hypotheses[\s\S]*acronym expansions alone/,
+  bounded_discovery_fallback: /If neither targeted search finds plausible candidates[\s\S]*third and final search[\s\S]*omit `query`[\s\S]*preserve all requested filters[\s\S]*source restrictions/,
+  explicit_literal_scope: /For an explicit literal-title request[\s\S]*keep that literal scope[\s\S]*no concept expansion or unfiltered fallback/,
+  empty_not_health: /Empty matches prove neither absence of related incidents nor connection health/,
   candidate_inspection: /`get_incident` to[\s\S]*inspect up to three candidates before claiming a connection/,
   m365: /Microsoft 365 tools\s+available and authorized/,
   document_exclusion: /Exclude ordinary document-finding/,
@@ -72,7 +78,8 @@ const contracts = {
 function workflowText(name) {
   const skill = readSource(`plugin/skills/${name}/SKILL.md`).toString();
   return name === "servicenow-incidents"
-    ? skill + "\n" + readSource("plugin/skills/servicenow-incidents/references/assignment.md") +
+    ? skill + "\n" + readSource("plugin/skills/servicenow-incidents/references/investigation.md") +
+      "\n" + readSource("plugin/skills/servicenow-incidents/references/assignment.md") +
       "\n" + readSource("plugin/skills/servicenow-incidents/references/handoff.md")
     : skill;
 }
@@ -87,7 +94,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.8"$/m);
+    assert.match(text, /^  version: "1\.0\.9"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
@@ -144,6 +151,15 @@ test("handoff reference is loaded for notes requests and remains bounded", () =>
   assert.match(incident, /For assignment-only requests, change only the assignee/);
   assert.ok(reference.trim().split(/\s+/).length < 400);
   assert.doesNotMatch(reference, /https?:\/\/|[A-Z]{3}\d{7}/);
+});
+
+test("natural-language investigation is loaded before discovery and stays generic", () => {
+  const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
+  const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
+  assert.match(incident, /\[Natural-language investigation\]\(references\/investigation\.md\)\s+before the first search/);
+  assert.ok(reference.trim().split(/\s+/).length < 500);
+  assert.doesNotMatch(reference, /https?:\/\/|[A-Z]{3}\d{7}|\bPOS\b|point of sale|card payments/i);
+  assert.match(reference, /agent reasoning, not a fixed keyword dictionary/);
 });
 
 // These assert that instructions cover each case, not that a model will follow them.

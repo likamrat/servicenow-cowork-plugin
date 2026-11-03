@@ -279,6 +279,12 @@ Upload the configured ZIP, not the template or source archive.
    The current identities are `servicenow-incidents`,
    `servicenow-changes` and `servicenow-users`. Verify those exact current
    child bodies rather than an older similarly named skill before assignment.
+   For discovery, use the user's original business question without coaching
+   title keywords. Verify the investigation reference was loaded and that
+   related search hypotheses or the bounded fallback lead to inspected, relevant
+   source records. Literal-title control queries diagnose retrieval but do not
+   establish natural-language acceptance. Static skill tests check instructions,
+   not whether the host's model follows them.
 3. Use a fresh, normal freeform request such as "Can you assign this incident to
    Jordan Lee?" for the actual authorized target. Do not include a tool recipe,
    email, directory ID or creation choreography, or artificial source restrictions.

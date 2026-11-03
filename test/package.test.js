@@ -41,7 +41,7 @@ test("plugin ZIP has reproducible bytes, valid entries, all skills and aligned r
   assertArchiveIntegrity(zip);
   assert.deepEqual(zip.getEntries().map((entry) => entry.entryName).sort(), [...PLUGIN_FILES, "LICENSE", "NOTICE"].sort());
   const packaged = JSON.parse(zip.readAsText("manifest.json"));
-  assert.equal(packaged.version, "1.0.8");
+  assert.equal(packaged.version, "1.0.9");
   assert.equal(packaged.manifestVersion, "1.28", "The Microsoft manifest schema has its own version");
   assert.equal(JSON.parse(readSource("package.json")).version, packaged.version);
   const lock = JSON.parse(readSource("package-lock.json"));
@@ -56,6 +56,8 @@ test("plugin ZIP has reproducible bytes, valid entries, all skills and aligned r
   assert.ok(zip.getEntry("skills/servicenow-incidents/references/assignment.md"));
   assert.equal(zip.readAsText("skills/servicenow-incidents/references/handoff.md"),
     readSource("plugin/skills/servicenow-incidents/references/handoff.md").toString());
+  assert.equal(zip.readAsText("skills/servicenow-incidents/references/investigation.md"),
+    readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString());
   assert.deepEqual(packaged.agentConnectors[0].toolSource.remoteMcpServer.authorization, {
     type: "OAuthPluginVault", referenceId: "",
   });

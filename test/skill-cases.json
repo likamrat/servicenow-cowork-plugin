@@ -14,6 +14,34 @@
     "contracts": ["symptom_trigger", "evidence_first", "literal_search", "candidate_inspection", "m365"]
   },
   {
+    "id": "business-concept-acronym",
+    "skill": "servicenow-incidents",
+    "prompt": "Can you show me the POS incidents we have?",
+    "expected_behavior": "Translate the business concept into distinct search hypotheses about related activities or symptoms, rather than only spelling out the acronym. Select literal query terms internally, inspect candidates, and retain the bounded discovery fallback. The user need not know ticket wording.",
+    "contracts": ["intent_translation", "agent_owned_search", "diverse_search", "literal_search", "bounded_discovery_fallback", "candidate_inspection", "source_restrictions"]
+  },
+  {
+    "id": "business-concept-phrase",
+    "skill": "servicenow-incidents",
+    "prompt": "What's going on with point of sale?",
+    "expected_behavior": "Use meaningfully related activities and symptoms as retrieval hypotheses, not invented source facts. Ground relevance in inspected records and distinguish a related incident from a proven cause.",
+    "contracts": ["intent_translation", "agent_owned_search", "diverse_search", "candidate_inspection", "uncertainty", "original_links"]
+  },
+  {
+    "id": "literal-title-scope",
+    "skill": "servicenow-incidents",
+    "prompt": "Only show incidents whose titles contain POS.",
+    "expected_behavior": "Honor the explicitly literal title scope. Do not broaden to related concepts or unfiltered recent records; report the scoped result honestly.",
+    "contracts": ["literal_search", "explicit_literal_scope", "empty_evidence"]
+  },
+  {
+    "id": "unmatched-meaning-not-health",
+    "skill": "servicenow-incidents",
+    "prompt": "We cannot join our team calls. Are there related incidents?",
+    "expected_behavior": "Reason across related activities or symptoms, preserve source restrictions and filters, and use the bounded recent-title fallback when targeted hypotheses find no plausible candidates. An empty result proves neither absence of related incidents nor connection health.",
+    "contracts": ["intent_translation", "diverse_search", "bounded_discovery_fallback", "bounded_search", "empty_not_health", "transport_not_absence"]
+  },
+  {
     "id": "document-only",
     "skill": "servicenow-incidents",
     "prompt": "Find the travel policy and the reimbursement form.",
@@ -31,8 +59,8 @@
     "id": "empty-title-search",
     "skill": "servicenow-incidents",
     "prompt": "Printing fails in the office. Find known issues and any related team notes.",
-    "expected_behavior": "If short title searches are empty, stop after at most three. Explain the recent-title search limit, not that no incident exists. Still seek requested Microsoft 365 notes.",
-    "contracts": ["literal_search", "bounded_search", "empty_evidence", "m365"]
+    "expected_behavior": "Use meaningfully different title-search hypotheses, then a bounded recent-title fallback if neither finds plausible candidates and source restrictions permit. Stop after at most three searches. Explain the evidence limit, not that no incident exists or that the connection is healthy. Still seek requested Microsoft 365 notes.",
+    "contracts": ["literal_search", "diverse_search", "bounded_discovery_fallback", "bounded_search", "empty_evidence", "empty_not_health", "m365"]
   },
   {
     "id": "plausible-not-confirmed",

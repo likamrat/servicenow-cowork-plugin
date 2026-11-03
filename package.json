@@ -1,6 +1,6 @@
 {
   "name": "servicenow-cowork-plugin",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Microsoft Copilot Cowork skills and packaging for the shared ServiceNow MCP",
   "private": true,
   "license": "MIT",
