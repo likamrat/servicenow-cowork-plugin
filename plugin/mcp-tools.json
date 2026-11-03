@@ -3,7 +3,10 @@
     {
       "name": "search_incidents",
       "description": "Investigate reported workplace IT symptoms such as access failures, unavailable or slow applications, service outages, or remote connectivity trouble by finding related ServiceNow incidents, even when the user does not name ServiceNow or provide a ticket number. Query matches one literal substring of the incident title (short_description), not the full description or semantic meaning; use a short discriminating term or phrase. Optional number, state, priority, and assignee filters narrow results together. Read-only; up to 20 incidents updated within the last six months, with source links. Respect explicit source restrictions; ordinary document-finding without an IT problem does not call for this tool.",
-      "annotations": { "readOnlyHint": true, "title": "Search Incidents" },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Search Incidents"
+      },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -33,7 +36,10 @@
     {
       "name": "get_incident",
       "description": "Read a ServiceNow incident by a number supplied by the user or returned by search_incidents. Inspect whether a candidate matches a reported workplace IT problem and retrieve any recorded impact and workaround; a title match alone does not confirm the cause. Read-only; includes a source link and only incidents updated within the last six months. Respect explicit source restrictions.",
-      "annotations": { "readOnlyHint": true, "title": "Get Incident" },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Incident"
+      },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -42,13 +48,18 @@
             "description": "Incident number"
           }
         },
-        "required": ["number"]
+        "required": [
+          "number"
+        ]
       }
     },
     {
       "name": "search_changes",
       "description": "Read up to 20 ServiceNow change requests updated within the last six months, with source links.",
-      "annotations": { "readOnlyHint": true, "title": "Search Changes" },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Search Changes"
+      },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -70,7 +81,10 @@
     {
       "name": "get_change",
       "description": "Read a change request by number with a source link. Only changes updated within the last six months are included.",
-      "annotations": { "readOnlyHint": true, "title": "Get Change Request" },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Change Request"
+      },
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -79,7 +93,598 @@
             "description": "Change number"
           }
         },
-        "required": ["number"]
+        "required": [
+          "number"
+        ]
+      }
+    },
+    {
+      "name": "get_incident_schema",
+      "description": "Read the current inherited incident fields, reference targets, choices and conditional policies before creating or changing an incident. Metadata is not effective source permission; ServiceNow ACLs and business rules remain authoritative.",
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Read incident schema"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "resolve_incident_assignee",
+      "description": "Resolve a ServiceNow assignee using exact identity matches, never fuzzy matching or the first row. With no field, union exact login, email, display-name and first-name matches. Return unique, ambiguous, not_found or incomplete plus minimal candidates. Only a unique result identifies one candidate; clarify ambiguity or incomplete results before assigning. Entra email is a lookup hint, not proof of a ServiceNow identity or assignment eligibility. Does not create users or change access.",
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Resolve incident assignee"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "sys_id",
+              "user_name",
+              "email",
+              "name",
+              "first_name"
+            ]
+          }
+        },
+        "required": [
+          "identity"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_incident",
+      "description": "Create an authorized incident using source-schema-valid business values. Resolve reference fields to exact source sys_ids first; assigned_to accepts a resolved sys_user ID or null/empty to leave unassigned. No user provisioning or access changes. Retain the operation UUID; optional supplied correlation supports read-only response-loss reconciliation. Normal source rules and notifications run. Independently read back requested fields; never replay an attempted or uncertain operation.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "title": "Create incident"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 60,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "correlation_field": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,127}$"
+          }
+        },
+        "required": [
+          "values",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_incident",
+      "description": "Patch only requested incident business fields after an exact number/version preflight using the current sys_mod_count from get_incident. assigned_to takes a resolved sys_user ID or null/empty to clear; assignment group is preserved unless included. To add findings, set values.work_notes to one nonempty note within the discovered field length, optionally together with assigned_to in the same patch. Requires source journal_input metadata. This appends, never replaces description/history. Independent bounded journal readback returns work_note separately from record_fields; assignment alone is not note confirmation. Comments/other journal fields are unsupported. Source ACLs/rules and normal effects apply; reference existence is not eligibility. Not atomic CAS. Keep the original UUID and inspect get_incident_operation after partial/unknown results; never retry a sent append under any UUID.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "title": "Update incident"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "pattern": "^[Ii][Nn][Cc][0-9]{1,37}$"
+          },
+          "expected_mod_count": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "values": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 60,
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "number",
+          "expected_mod_count",
+          "values",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_incident",
+      "description": "Delete one explicitly authorized incident after exact identity/version preflight. Inspect material relationships/native effects and agree retention if deletion permission is unknown before using an incident as disposable. confirm is an API guard, not user consent. Confirm exact parent absence only; cleanup_complete remains false because hidden/dynamic related effects are not proven. No automatic child deletion or retry.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "title": "Delete incident"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "pattern": "^[Ii][Nn][Cc][0-9]{1,37}$"
+          },
+          "expected_mod_count": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "confirm": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "number",
+          "expected_mod_count",
+          "operation_id",
+          "confirm"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_incident_operation",
+      "description": "Read this requester's own original incident-operation receipt and current source state. For a work-note append, independently re-read its exact observed entry, or search a bounded 20-entry work-note window on that incident when the entry is unknown. Returns only the requested matching new note, with explicit observed/not_observed/unknown evidence and limitReached, not unrestricted journal history. Source ACLs apply; not_observed is not proof of absence. Does not replay writes, clear holds, or upgrade an uncertain receipt because later state matches. Parent absence does not prove complete cleanup.",
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Read incident operation outcome"
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_schema",
+      "description": "Discover source user schema and supported ordinary profile fields plus source-policy fingerprints. Discovery is not approval or effective ACL permission. Generic user CRUD is independent of the agent's directory/context provider.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "lookup_users",
+      "description": "Find exact source users by login, email, display name or first name. Without field, union exact matches; never pick the first ambiguous or incomplete candidate. Inputs from Work IQ or another agent are request data, not backend-verified directory identity. Does not create, adopt or map accounts.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "field": {
+            "type": "string",
+            "enum": [
+              "sys_id",
+              "user_name",
+              "email",
+              "name",
+              "first_name"
+            ]
+          }
+        },
+        "required": [
+          "identity"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user",
+      "description": "Read one exact ServiceNow user and version with ordinary name/contact/status fields. No passwords, tokens, credential hashes or role export.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "required": [
+          "sys_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "create_user",
+      "description": "Create a source human user with supplied login and ordinary profile including optional discovered email. Requires reviewed source visibility/schema/hooks and native username uniqueness; existing login/email is a collision, never silent adoption. Creates explicitly inactive, locked and notification-disabled without password, roles, group membership, activation or SSO enrollment. Normal source hooks may create a primary notification device and identity hash. Supplied directory context is not verified by this backend. Retain operation UUID and created identity on partial failure; never replay uncertain creation.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "profile": {
+            "type": "object",
+            "properties": {
+              "first_name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "last_name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 255
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "minProperties": 1
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "user_name",
+          "profile",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "update_user",
+      "description": "Update only supplied first_name, last_name, title or email after exact user/version, protected-identity and reviewed source-policy checks. Does not rename login, adopt an external account, change lifecycle/password/access or bypass source ACLs. Normal name/device synchronization and locked-account revocation hooks may run. Preflight is not atomic CAS; preserve uncertain outcomes and never replay.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "expected_mod_count": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "profile": {
+            "type": "object",
+            "properties": {
+              "first_name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "last_name": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 255
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 255
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "minProperties": 1
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "sys_id",
+          "expected_mod_count",
+          "profile",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "assess_user_delete",
+      "description": "Assess exact user deletion impact using native relationship/version/cascade discovery and current-operator/retention protection. Returns a caller-bound assessment ID and disclosed native effects. It is not consent or DELETE permission.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          }
+        },
+        "required": [
+          "sys_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "delete_user",
+      "description": "Delete the exact explicitly authorized user from a current caller-bound impact assessment. Rechecks target version, relationships and native effects; protects current operator and retention holds. No role stripping, direct child cleanup or force. Parent absence is separate from cleanup_complete=false and retained/unknown effects. Never replay an uncertain operation.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "expected_mod_count": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "expected_impact_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "operation_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+          },
+          "confirm": {
+            "type": "boolean",
+            "const": true
+          },
+          "acknowledged_native_effects": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 5,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "enum": [
+                "primary-device-cascade-and-parent-hook",
+                "exact-user-profile/channel/filter/preference-cleanup",
+                "exact-user-session-invalidation",
+                "native-reference-delete-clear-retain-or-restrict",
+                "conditional-native-hooks-and-unenumerated-effects"
+              ]
+            }
+          },
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "sys_id",
+          "expected_mod_count",
+          "expected_impact_sha256",
+          "operation_id",
+          "confirm",
+          "acknowledged_native_effects",
+          "assessment_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_operation",
+      "description": "Read only this authenticated caller's original user-operation receipt and current source observation when available. Retains created identity and partial/uncertain evidence without replay, attribution upgrade or hold removal.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "inspect_user_access_policy",
+      "description": "Preflight generic access continuation BEFORE creating a source user. With no arguments, list privately configured definition-policy keys (not user lists). With policy, verify the enabled policy's current group, full contained-role/ACL/source-hook evidence. Alternatively supply existing group_id/role_id and optional activate to produce review evidence, NOT approval. Do not mix policy and definition inputs. No grant, adoption, directory lookup or source write.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "group_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "role_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "activate": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "assess_user_access",
+      "description": "Read one exact source user's current identity, memberships and effective roles against an enabled operator-reviewed generic definition policy. Saves a five-minute caller-bound assessment with missing stages and material native effects. Works for newly created or existing legitimate local users, not preloaded people. No source grant or approval. Protected/operator/retained/external/service identities and incomplete evidence stop the path.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "policy": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          }
+        },
+        "required": [
+          "sys_id",
+          "policy"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "apply_user_access",
+      "description": "Apply only the reviewed policy's missing existing-group membership, direct role grant and activation if explicitly configured, from this caller's current assessment. Native role expansion and unrelated access/profile preservation are verified after every stage. Never writes inherited-role bookkeeping, passwords, unlock, new role/group definitions or incident assignment. Multiple stages are not atomic: retain confirmed stages and user identity on denial/partial/uncertain outcome, never replay with any UUID or caller. Acknowledgments are not user consent or a source ACL override.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sys_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "acknowledged_native_effects": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "native-membership-and-cache-effects",
+                "native-direct-and-contained-role-grants",
+                "reviewed-acl-and-application-access",
+                "conditional-source-hooks",
+                "account-activation-with-lock-preserved",
+                "reviewed-role-delegation-eligibility"
+              ]
+            }
+          }
+        },
+        "required": [
+          "sys_id",
+          "assessment_id",
+          "operation_id",
+          "acknowledged_native_effects"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "get_user_access_operation",
+      "description": "Read this caller's original generic access-continuation receipt and current source access when readable. Retains user identity, stage receipts, denials and uncertainty. Does not repeat grants, delete retained accounts, upgrade attribution or clear resource holds.",
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation_id"
+        ],
+        "additionalProperties": false
       }
     }
   ]

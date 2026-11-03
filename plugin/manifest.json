@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.28/MicrosoftTeams.schema.json",
   "manifestVersion": "1.28",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "id": "",
   "developer": {
     "name": "Lior Kamrat",
@@ -14,8 +14,8 @@
     "full": "ServiceNow for Cowork"
   },
   "description": {
-    "short": "Investigate workplace IT problems with recent ServiceNow incidents",
-    "full": "Investigate reported workplace IT symptoms, including failed access, unavailable or slow applications, service outages, and remote connectivity trouble, even without a ticket number or ServiceNow terminology. Read recent incidents and change requests from your configured ServiceNow instance, cite source links, and include requested Microsoft 365 background. Respect explicit source restrictions; ordinary document-finding without an IT problem does not call for incident lookup. The connection is read-only and cannot create, update, assign, approve, or resolve records."
+    "short": "Manage ServiceNow incidents and user profiles with authorized directory context",
+    "full": "Investigate workplace IT symptoms and read recent incidents and change requests with original source links. Perform authorized incident operations, generic source user profile CRUD and separately policy-controlled group/role eligibility through one shared authenticated ServiceNow MCP. For ordinary name-only assignment requests, dynamically resolve the person with the current host's authorized Work IQ or directory capability and handle technical login/email internally. Preflight the reviewed eligibility policy before creating an absent source user, then assess and apply only authorized missing access before guarded assignment. No preconfigured person lists, manual source setup or direct API workaround. Preserve source restrictions, distinct profile/access scopes, native confirmation, source schema/version and deletion-impact guards. Creation alone is not assignment readiness. Change requests remain read-only; passwords and role grants are not ordinary profile fields."
   },
   "icons": {
     "color": "color.png",
@@ -24,13 +24,14 @@
   "accentColor": "#24364B",
   "agentSkills": [
     { "folder": "./skills/servicenow-incidents" },
-    { "folder": "./skills/servicenow-changes" }
+    { "folder": "./skills/servicenow-changes" },
+    { "folder": "./skills/servicenow-users" }
   ],
   "agentConnectors": [
     {
       "id": "servicenow-api",
       "displayName": "ServiceNow Instance",
-      "description": "Find recent ServiceNow incidents behind reported workplace IT symptoms, even without a ticket number; read-only.",
+      "description": "Shared authenticated incident operations, generic user profile CRUD and reviewed access continuation, filtered by Incident.Manage, User.Manage and User.Access.Manage. Directory context belongs to the agent; profile fields cannot grant passwords or roles.",
       "toolSource": {
         "remoteMcpServer": {
           "mcpServerUrl": "",
@@ -38,7 +39,8 @@
             "file": "mcp-tools.json"
           },
           "authorization": {
-            "type": "None"
+            "type": "OAuthPluginVault",
+            "referenceId": ""
           }
         }
       }

@@ -6,6 +6,8 @@ const ROOT = path.resolve(__dirname, "..");
 const PLUGIN_FILES = [
   "manifest.json", "mcp-tools.json", "color.png", "outline.png",
   "skills/servicenow-incidents/SKILL.md", "skills/servicenow-changes/SKILL.md",
+  "skills/servicenow-incidents/references/assignment.md", "skills/servicenow-users/SKILL.md",
+  "skills/servicenow-incidents/references/handoff.md",
 ];
 const SOURCE_FILES = [
   ".gitattributes", ".gitignore", "LICENSE", "NOTICE", "README.md", "SETUP.md",
@@ -18,7 +20,7 @@ const SOURCE_FILES = [
 
 const PUBLIC_HOSTS = new Set([
   "github.com", "registry.npmjs.org", "opencollective.com", "tidelift.com",
-  "developer.microsoft.com", "learn.microsoft.com", "modelcontextprotocol.io",
+  "developer.microsoft.com", "learn.microsoft.com", "modelcontextprotocol.io", "teams.microsoft.com",
 ]);
 
 function checkText(file, text, { publicSurface = false } = {}) {
@@ -69,7 +71,11 @@ function checkDistribution(root = ROOT) {
   const { serviceNowMcp } = JSON.parse(readSource("package.json", root));
   checkContract(readSource("plugin/mcp-tools.json", root), serviceNowMcp);
   const manifest = JSON.parse(readSource("plugin/manifest.json", root));
-  if (manifest.id || manifest.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl ||
+  const server = manifest.agentConnectors?.[0]?.toolSource?.remoteMcpServer;
+  if (manifest.agentConnectors?.length !== 1 || server?.authorization?.type !== "OAuthPluginVault") {
+    throw new Error("The source manifest must contain one OAuthPluginVault connector for the shared MCP.");
+  }
+  if (manifest.id || server.mcpServerUrl || server.authorization.referenceId ||
       ["websiteUrl", "privacyUrl", "termsOfUseUrl"].some((key) => manifest.developer[key])) {
     throw new Error("Keep deployment values out of the source manifest; use a local package configuration.");
   }

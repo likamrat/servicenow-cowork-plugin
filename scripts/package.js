@@ -11,11 +11,21 @@ function httpsUrl(value, field, endpoint = false) {
       (endpoint && url.pathname !== "/mcp")) {
     throw new Error(`${field} must use HTTPS without credentials, query or fragment${endpoint ? ", with path /mcp" : ""}.`);
   }
+  if (endpoint && /^(?:localhost|.*\.localhost|127(?:\.\d+){3}|\[::1\]|0\.0\.0\.0)\.?$/i.test(url.hostname)) {
+    throw new Error("mcpServerUrl must be reachable by Cowork; a loopback URL is not a remote connection.");
+  }
   return url.href;
 }
 
 function configuredManifest(manifest, config) {
-  const fields = ["appId", "mcpServerUrl", "websiteUrl", "privacyUrl", "termsOfUseUrl", "acknowledgeUnauthenticatedEndpoint"];
+  if (manifest.agentConnectors?.length !== 1) {
+    throw new Error("The shared ServiceNow MCP requires one authenticated connector.");
+  }
+  const server = manifest.agentConnectors[0].toolSource?.remoteMcpServer;
+  if (server?.authorization?.type !== "OAuthPluginVault") {
+    throw new Error("The ServiceNow connector requires OAuthPluginVault; anonymous access is not supported.");
+  }
+  const fields = ["appId", "mcpServerUrl", "websiteUrl", "privacyUrl", "termsOfUseUrl", "oauthRegistrationId"];
   if (!config || typeof config !== "object" || Array.isArray(config) ||
       Object.keys(config).some((key) => !fields.includes(key))) {
     throw new Error("Package configuration contains unsupported fields. Credentials do not belong in this file.");
@@ -24,14 +34,17 @@ function configuredManifest(manifest, config) {
       !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(config.appId)) {
     throw new Error("appId must be a UUID assigned to this app.");
   }
-  if (config.acknowledgeUnauthenticatedEndpoint !== true) {
-    throw new Error("This connector has no client authentication. Review the exposure and set acknowledgeUnauthenticatedEndpoint only with the operator's approval.");
+  if (typeof config.oauthRegistrationId !== "string" ||
+      !config.oauthRegistrationId.length || config.oauthRegistrationId.length > 128 ||
+      /[\s\x00-\x1f\x7f]/.test(config.oauthRegistrationId)) {
+    throw new Error("oauthRegistrationId must be the non-secret Microsoft token-store OAuth registration ID (1-128 characters), not a client ID or secret.");
   }
   manifest.id = config.appId;
   for (const field of ["websiteUrl", "privacyUrl", "termsOfUseUrl"]) {
     manifest.developer[field] = httpsUrl(config[field], field);
   }
-  manifest.agentConnectors[0].toolSource.remoteMcpServer.mcpServerUrl = httpsUrl(config.mcpServerUrl, "mcpServerUrl", true);
+  server.mcpServerUrl = httpsUrl(config.mcpServerUrl, "mcpServerUrl", true);
+  server.authorization.referenceId = config.oauthRegistrationId;
   return manifest;
 }
 

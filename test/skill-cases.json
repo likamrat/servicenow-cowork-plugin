@@ -51,9 +51,149 @@
   {
     "id": "incident-write",
     "skill": "servicenow-incidents",
-    "prompt": "Resolve INC0098765 and add a work note.",
-    "expected_behavior": "Explain the read-only limit, without confirmation cards or trying another write tool.",
-    "contracts": ["read_only"]
+    "prompt": "Update the description of INC0098765 to the wording I supplied.",
+    "expected_behavior": "Read the current schema and incident, honor exact user authorization and native confirmation, pass the current version guard and independently verify only the requested change.",
+    "contracts": ["current_schema", "write_authorization", "version_guard", "write_readback"]
+  },
+  {
+    "id": "incident-assignment",
+    "skill": "servicenow-incidents",
+    "prompt": "Assign the incident we just inspected to the person I selected.",
+    "expected_behavior": "Resolve the exact selected identity through the same authenticated connector. Do not guess similar names or provision access. Preserve the assignment group and independently confirm the assignee after the authorized guarded update.",
+    "contracts": ["exact_identity", "assignment_scope", "write_authorization", "write_readback"]
+  },
+  {
+    "id": "contextual-assignment-with-findings",
+    "skill": "servicenow-incidents",
+    "prompt": "Assign that incident to Avery and add what we've found so they can pick it up.",
+    "expected_behavior": "Use the inspected incident context, resolving any real ambiguity. Resolve the existing named assignee naturally. Before either effect, qualify supported internal note append and independent readback as well as guarded assignment. Preserve description and unrelated fields. Carry observed findings, source links, unconfirmed hypotheses and useful next checks without claiming a completed rollout or repair.",
+    "contracts": ["natural_assignment_request", "dynamic_directory_people", "contextual_handoff", "handoff_preflight", "journal_not_description", "grounded_handoff", "handoff_readback", "journal_dispatch", "write_authorization", "version_guard"]
+  },
+  {
+    "id": "handoff-notes-unavailable",
+    "skill": "servicenow-incidents",
+    "prompt": "Hand it over with our findings, but this connection cannot read incident work notes.",
+    "expected_behavior": "Report the specific append/readback capability gap before doing an avoidable assignment-only handoff. Do not silently drop findings, replace description or use customer-visible comments as a workaround.",
+    "contracts": ["handoff_preflight", "journal_not_description", "handoff_readback"]
+  },
+  {
+    "id": "notes-without-reassignment",
+    "skill": "servicenow-incidents",
+    "prompt": "Add our findings to the incident's internal notes; keep its owner.",
+    "expected_behavior": "Append only work_notes through the guarded incident operation. Omit assigned_to, preserve the current owner and independently inspect the note evidence without exposing unrelated journal history.",
+    "contracts": ["notes_only_scope", "journal_not_description", "journal_dispatch", "handoff_readback"]
+  },
+  {
+    "id": "uncertain-handoff-notes",
+    "skill": "servicenow-incidents",
+    "prompt": "The handoff timed out after sending the notes. Try again.",
+    "expected_behavior": "Retain the original operation ID and inspect its read-only recovery evidence. Do not duplicate a journal append, repeat the assignment or claim attribution from later matching text. Report partial or uncertain effects.",
+    "contracts": ["uncertain_note_recovery", "handoff_readback"]
+  },
+  {
+    "id": "ambiguous-contextual-handoff",
+    "skill": "servicenow-incidents",
+    "prompt": "We inspected three similar tickets. Assign that one with our notes.",
+    "expected_behavior": "Ask which incident when the conversation does not select exactly one. Do not choose the first candidate or issue any write while the target remains ambiguous.",
+    "contracts": ["contextual_handoff", "handoff_preflight"]
+  },
+  {
+    "id": "uncertain-incident-write",
+    "skill": "servicenow-incidents",
+    "prompt": "The assignment call timed out. Try it again.",
+    "expected_behavior": "Recover the original operation read-only rather than replaying it with the same or a new operation ID; do not infer no effect from a timeout.",
+    "contracts": ["uncertain_recovery"]
+  },
+  {
+    "id": "offline-assignment-connection",
+    "skill": "servicenow-incidents",
+    "prompt": "The incident and assignee tools both failed with HTTP 404. Try the assignment again.",
+    "expected_behavior": "Treat the failed connection separately from a successful source lookup reporting no match. Stop before writing, preserve the last confirmed state as historical and do not infer missing users or blindly repeat the assignment.",
+    "contracts": ["transport_not_absence", "uncertain_recovery"]
+  },
+  {
+    "id": "directory-first-name-only-assignment",
+    "skill": "servicenow-incidents",
+    "prompt": "Can you assign INC0098765 to Avery Example?",
+    "expected_behavior": "Carry the workflow in the instructions, not the human prompt. Resolve the named person dynamically through the authorized host directory, keep technical fields internal, then use exact source lookup and any separately authorized creation/access continuation before guarded assignment. A directory probe or created profile alone is not acceptance.",
+    "contracts": ["natural_assignment_request", "dynamic_directory_people", "mcp_only_composition", "directory_first", "honest_directory_context", "continuation_gate", "exact_identity", "assignment_scope"]
+  },
+  {
+    "id": "future-directory-person",
+    "skill": "servicenow-incidents",
+    "prompt": "Could you give this ticket to Morgan Ellis?",
+    "expected_behavior": "Support a person added to the permitted directory after deployment with no known source counterpart. Resolve current directory context without preconfigured person IDs, allowlists or manual source fixtures. Keep creation and actual eligibility under the qualified generic workflow and required authorization; stop before avoidable creation when continuation is unavailable.",
+    "contracts": ["natural_assignment_request", "dynamic_directory_people", "mcp_only_composition", "directory_first", "continuation_gate", "assignment_scope"]
+  },
+  {
+    "id": "ambiguous-directory-person",
+    "skill": "servicenow-incidents",
+    "prompt": "Can Riley take this one?",
+    "expected_behavior": "If current permitted directory results contain multiple plausible people, ask a human-readable disambiguation using grounded distinguishing details. Do not choose the first match or require the user to provide email, IDs or a tool recipe.",
+    "contracts": ["natural_assignment_request", "dynamic_directory_people", "meaningful_clarification", "directory_first", "exact_identity"]
+  },
+  {
+    "id": "directory-source-restriction",
+    "skill": "servicenow-incidents",
+    "prompt": "Assign this using only ServiceNow; do not query our directory.",
+    "expected_behavior": "Respect the source restriction. Resolve an existing source identity if possible; do not silently query Work IQ or create a directory-derived user without permitted context.",
+    "contracts": ["source_restrictions", "exact_identity"]
+  },
+  {
+    "id": "generic-user-create",
+    "skill": "servicenow-users",
+    "prompt": "Create a ServiceNow user with the supplied login and ordinary profile.",
+    "expected_behavior": "Use generic source schema, exact collision checks and create_user under User.Manage and reviewed source policy. Supplied data does not require a Work IQ backend or fabricated verification.",
+    "contracts": ["generic_user_scope", "generic_user_context", "generic_user_write"]
+  },
+  {
+    "id": "generic-user-update-boundary",
+    "skill": "servicenow-users",
+    "prompt": "Update the user's title, password and roles through the profile fields.",
+    "expected_behavior": "Only supported ordinary profile changes can use update_user, with current version and authorization. Password/access operations cannot be smuggled into profile.",
+    "contracts": ["generic_user_write", "user_profile_boundary"]
+  },
+  {
+    "id": "generic-access-before-creation",
+    "skill": "servicenow-users",
+    "prompt": "Can you put Jordan Lee on this ticket?",
+    "expected_behavior": "Before creating an absent source user, require the separate access scope and a currently available reviewed definition policy for the needed assignment group and role. Listing a key or collecting unapproved evidence does not qualify it. Use source-user assessment only after resolving or creating the exact user.",
+    "contracts": ["access_scope", "access_preflight", "access_assessment", "access_apply"]
+  },
+  {
+    "id": "partial-user-access",
+    "skill": "servicenow-users",
+    "prompt": "It says the group was added but the next step failed. Can you finish?",
+    "expected_behavior": "Retain the user and confirmed stage; recover the caller's original access operation read-only. Do not repeat grants, delete the account, clear holds or claim completed assignment from partial access.",
+    "contracts": ["access_apply", "access_recovery", "user_recovery"]
+  },
+  {
+    "id": "semantic-user-capability-metadata",
+    "skill": "servicenow-users",
+    "prompt": "What can the ServiceNow connection do for user accounts? Please check without changing anything.",
+    "expected_behavior": "Distinguish raw record-route restrictions from the semantic user tools. Treat suggestion lists as suggestions and unevaluated readiness as unknown; inspect a relevant enabled policy key before claiming source readiness. Do not infer that all user writes are disabled or approved from schema discovery.",
+    "contracts": ["truthful_user_metadata", "unevaluated_policy", "access_preflight", "generic_user_scope"]
+  },
+  {
+    "id": "generic-user-delete-impact",
+    "skill": "servicenow-users",
+    "prompt": "Delete the exact ServiceNow user I selected.",
+    "expected_behavior": "Assess native impact, current version and protected identities, require exact authorization, then use the assessment-bound delete contract without role stripping or child cleanup.",
+    "contracts": ["user_delete_guard", "user_recovery"]
+  },
+  {
+    "id": "uncertain-user-creation",
+    "skill": "servicenow-users",
+    "prompt": "Creating the counterpart timed out. Try creating it again and then assign the incident.",
+    "expected_behavior": "Read the original operation outcome, retain any created identity and stop unresolved continuation. Never recreate under a new ID or treat a later email match as attribution.",
+    "contracts": ["user_recovery", "generic_user_context"]
+  },
+  {
+    "id": "incident-delete",
+    "skill": "servicenow-incidents",
+    "prompt": "Delete the incident that I explicitly approved for removal.",
+    "expected_behavior": "Use the incident deletion contract, fresh version and real host gate; verify exact source absence and distinguish unknown related effects from complete cleanup.",
+    "contracts": ["version_guard", "write_authorization", "deletion_evidence"]
   },
   {
     "id": "m365-unavailable",
