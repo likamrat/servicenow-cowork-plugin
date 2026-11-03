@@ -53,6 +53,13 @@ The source execution account and assignee remain distinct from that requester.
 An authenticated requester or eligible assignee does not establish source ACL
 permission.
 
+Ordinary assignment to an existing, exactly resolved source user uses
+`Incident.Manage`; it does not require the profile or access-administration
+scopes. Missing user-administration tools are not a reason to block that incident
+workflow or broaden consent. Identity resolution is not an eligibility certificate:
+honor known source restrictions and the guarded incident operation's actual result.
+User creation or access changes remain separate, authorized workflows.
+
 The shared backend's `start:cowork` entrypoint uses an existing protected binding
 directory and a private `cowork-profile.json` in its configured state directory.
 The profile binds the instance, external URL, tenant, resource application GUID

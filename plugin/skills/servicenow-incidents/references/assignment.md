@@ -42,10 +42,10 @@ another tenant or a coding assistant's corporate Work IQ connection.
 
 ## Resolve or create the source user
 
-Use `lookup_users` with exact directory-returned email and/or login, with the
-appropriate `field`; union and deduplicate distinct source results. When only
-incident tools are authorized, `resolve_incident_assignee` can resolve an
-existing source identity, but it cannot create one. Names and email addresses
+Use `resolve_incident_assignee` with an exact permitted selector for incident
+assignment. If `lookup_users` is also authorized, use exact directory-returned
+email/login with the appropriate `field`; union and deduplicate distinct results.
+Neither lookup creates a user. Names and email addresses
 are selectors, not immutable identities.
 
 Only `unique` identifies one candidate; stop on `ambiguous` or `incomplete`.
@@ -53,31 +53,32 @@ Inspect the exact source user with `get_user` when authorized. Never choose the
 first similar name, invent a directory mapping, overwrite an existing identity
 or treat a failed/truncated lookup as proven absence.
 
-If complete exact lookups establish no source match and the requested workflow
-requires creation, follow `servicenow-users`: inspect `get_user_schema`, verify
-`User.Manage` and the reviewed source profile policy, and use `create_user` with
-actual discovered login/profile data. Keep the directory ID as context, not an
-unsupported source field; the source `sys_id` must come from ServiceNow.
+With `unique` existing source identity and no known source restriction requiring
+account/access changes, use the incident workflow under `Incident.Manage`.
+`User.Manage`, `User.Access.Manage` and access assessments are not
+prerequisites for ordinary assignment. Identity resolution is not an eligibility certificate:
+source ACLs/rules and the guarded incident operation remain authoritative.
+Stop on a real rejection or unknown write; do not grant access as a workaround.
 
-**Preflight the complete continuation before creating.** Use `inspect_user_access_policy`
-under `User.Access.Manage` as described in `servicenow-users`. Creation defaults
-to inactive, locked, notification-disabled and no access;
-`assignee_readiness: not_evaluated` is not readiness. Match a qualified policy to
-actual source qualifiers. Do not invent commands, bundle privileges into `profile`
-or assume a role is neutral. If that path is unavailable, report the exact
-capability/policy gate before creating avoidable unusable accounts.
-Do not substitute manual upfront account setup.
+If complete exact lookups establish no match and creation is separately authorized,
+read `servicenow-users`. Use `get_user_schema` and `create_user` under `User.Manage`
+with actual discovered profile data and the reviewed source policy.
+Directory IDs are context; use only the ServiceNow-returned `sys_id`.
 
-If creation succeeds but a later stage fails, retain its returned identity and
-operation receipt, and report the incomplete stage. If creation is uncertain,
-use `get_user_operation` with the original operation ID; do not create again,
-switch IDs or use a later email match as proof that this attempt created it.
+**Preflight the complete continuation before creating.** `inspect_user_access_policy`
+under `User.Access.Manage` must qualify needed eligibility changes against actual
+source requirements. Creation defaults to inactive, locked, notification-disabled
+and no access; `assignee_readiness: not_evaluated` is not readiness.
+If that path is unavailable, stop before creating; no manual setup or privileges
+hidden in `profile`.
+
+Retain created identities, receipts and partial outcomes. For uncertain creation,
+use `get_user_operation` with the original operation ID; do not create again or
+treat a later email match as attribution.
 
 ## Assign and verify
 
-Reference existence and directory membership are not assignment eligibility.
-Follow `servicenow-users` for assessed, authorized MCP access continuation.
-Once the exact source user and required eligibility are established, refresh
+After resolving an existing user, or completing separately authorized access changes, refresh
 `get_incident` and use `update_incident` with its current `expected_mod_count`,
 one retained operation ID and `values.assigned_to` set to the source user ID.
 For explicit unassignment use JSON `null`. Do not put an email, display name

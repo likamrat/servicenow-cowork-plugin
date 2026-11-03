@@ -3,7 +3,7 @@
 Resolve "that incident" from the inspected conversation context. If there are
 multiple plausible incidents and none was selected, ask which one before writing.
 Resolve the assignee through [Directory-first assignment](assignment.md).
-An existing eligible identity needs no account or access grant.
+Follow its existing-user branch for an already resolved account; no account or access grant is implicit.
 
 ## Qualify the whole request
 

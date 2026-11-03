@@ -11,7 +11,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.9"
+  version: "1.0.10"
 ---
 
 # ServiceNow incidents
@@ -62,9 +62,10 @@ do not bypass it with administrative tools.
 For assignee changes, first read [Directory-first assignment](references/assignment.md).
 Use actual host-native Work IQ/directory context when sources permit, handling
 technical login/email internally. Do not ask the user for email as the normal
-handoff or treat directory context as backend-verified identity. Reuse or create
-a source user through generic capabilities only after the required continuation
-policy is qualified; then use the returned `sys_user` ID for assignment.
+handoff or treat directory context as backend-verified identity.
+Use a resolved existing source user directly in the guarded incident workflow.
+Only required, separately authorized creation or access changes use the user
+administration workflow. Preserve the source-returned `sys_user` ID.
 
 Use the user's stated intent to identify the affected record and requested change;
 ask only about real ambiguity, material unexpected effects or required authorization.

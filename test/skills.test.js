@@ -27,6 +27,9 @@ const contracts = {
   read_only: /read-only[\s\S]*(?:another tool|write workflow)/,
   current_schema: /Read the current incident schema with `get_incident_schema`[\s\S]*supported fields, choices and reference targets/,
   exact_identity: /`resolve_incident_assignee`[\s\S]*Names and email addresses\s+are selectors, not immutable identities[\s\S]*Never choose the\s+first similar name/,
+  existing_assignee_route: /With `unique` existing source identity[\s\S]*`Incident\.Manage`[\s\S]*`User\.Manage`, `User\.Access\.Manage` and access assessments are not\s+prerequisites for ordinary assignment/,
+  source_assignment_boundary: /Identity resolution is not an eligibility certificate[\s\S]*source ACLs\/rules and the guarded incident operation remain authoritative[\s\S]*Stop on a real rejection or unknown write; do not grant access as a workaround/,
+  user_admin_not_assignment: /Ordinary assignment uses `Incident\.Manage`, not this profile\/access workflow[\s\S]*Enter this workflow only for separately authorized user creation or access changes/,
   assignment_scope: /change only the assignee and preserve the group and other fields[\s\S]*must not clear the old assignee first/,
   contextual_handoff: /Resolve "that incident" from the inspected conversation context[\s\S]*multiple plausible incidents[\s\S]*ask which one/,
   handoff_preflight: /Before either requested effect, qualify both assignment and journal append\/readback[\s\S]*stop before a partial assignment[\s\S]*not proof that notes can be persisted/,
@@ -94,7 +97,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.9"$/m);
+    assert.match(text, /^  version: "1\.0\.10"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");

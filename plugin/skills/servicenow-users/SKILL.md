@@ -2,14 +2,14 @@
 name: servicenow-users
 description: |
   Find and read ServiceNow users, or perform authorized generic
-  user profile creation, update or deletion. Also support an authorized incident agent's
-  resolve-or-create and policy-controlled eligibility steps.
+  user profile creation, update or deletion. Support an incident handoff only
+  when source user creation or access changes are needed.
   Honor source restrictions and user-management authorization. This is not
   directory administration, password setup or arbitrary access granting.
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.9"
+  version: "1.0.10"
 ---
 
 # ServiceNow users
@@ -38,9 +38,9 @@ For a directory-first incident workflow, consume the current host's actual
 authorized directory context and handle email internally. Do not require the
 user to supply email routinely. Direct source CRUD with sufficient user-supplied
 data does not require Work IQ. Respect source restrictions in both cases.
-For composed assignment, follow `servicenow-incidents` and its directory-first reference:
-the human names the person and incident, not a provisioning recipe. Account and
-access changes still require the applicable qualified workflow authorization.
+For assignment to an existing source user, follow `servicenow-incidents`.
+Ordinary assignment uses `Incident.Manage`, not this profile/access workflow.
+Enter this workflow only for separately authorized user creation or access changes.
 Use the delivered MCP tools, not direct source writes or manual pre-provisioning.
 
 ## Create or update a profile
@@ -87,7 +87,7 @@ review evidence, not a usable policy; never mix them with `policy`.
 `qualification: not_evaluated` and `policy_available: null` in a listing mean
 readiness is unknown, not denied or approved. Evaluate the relevant key.
 
-After resolving or creating the source user, call `assess_user_access` with the exact `sys_id` and policy key.
+For that authorized access change, call `assess_user_access` with the exact `sys_id` and policy key.
 Review its five-minute caller-bound assessment, missing stages and material native
 effects. Assessment is not consent. Then use `apply_user_access` with that `sys_id`, `assessment_id`,
 one retained `operation_id` and exact `acknowledged_native_effects` from the

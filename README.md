@@ -23,8 +23,11 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.9 improves natural-language incident discovery while preserving these
-names, the existing connector, tool contract and handoff notes.
+Release 1.0.10 keeps natural-language incident discovery and separates existing-user
+assignment from account/access administration. Existing assignees use the guarded
+incident workflow under `Incident.Manage`; user creation and access changes still
+require their own scopes and qualified policies. The connector, tool contract and
+combined handoff-note safeguards are unchanged.
 
 The [investigation workflow](plugin/skills/servicenow-incidents/references/investigation.md)
 translates business intent into related activities or symptoms before choosing
