@@ -178,6 +178,21 @@ test("packaging cannot downgrade authentication or add an anonymous connector", 
   assert.throws(() => configuredManifest(source, config), /one authenticated connector/);
 });
 
+test("configured URLs respect the manifest's limit after URL normalization", () => {
+  for (const field of ["websiteUrl", "privacyUrl", "termsOfUseUrl"]) {
+    const prefix = "https://project.example.invalid/";
+    const limit = prefix + "a".repeat(2048 - prefix.length);
+    assert.equal(configuredManifest(manifest(), { ...config, [field]: limit }).developer[field], limit);
+    assert.throws(() => configuredManifest(manifest(), { ...config, [field]: limit + "a" }), /2048/);
+    const encoded = prefix + "\u00e9".repeat(400);
+    assert.ok(encoded.length < 2048 && new URL(encoded).href.length > 2048);
+    assert.throws(() => configuredManifest(manifest(), { ...config, [field]: encoded }), /2048/);
+  }
+  assert.throws(() => configuredManifest(manifest(), {
+    ...config, mcpServerUrl: "https://" + "a".repeat(2048) + ".example.invalid/mcp",
+  }), /2048/);
+});
+
 test("source export uses only its allowlist and excludes Git, local settings and built archives", () => {
   const bytes = buildSource();
   assert.deepEqual(buildSource(), bytes);

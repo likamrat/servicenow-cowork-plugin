@@ -7,6 +7,9 @@ const { ROOT, PLUGIN_FILES, SOURCE_FILES, readSource, checkDistribution } = requ
 function httpsUrl(value, field, endpoint = false) {
   let url;
   try { url = new URL(value); } catch { throw new Error(`${field} must be an absolute HTTPS URL.`); }
+  if (url.href.length > 2048) {
+    throw new Error(`${field} must not exceed the manifest schema's 2048-character URL limit after normalization.`);
+  }
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash ||
       (endpoint && url.pathname !== "/mcp")) {
     throw new Error(`${field} must use HTTPS without credentials, query or fragment${endpoint ? ", with path /mcp" : ""}.`);

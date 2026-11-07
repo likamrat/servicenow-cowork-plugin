@@ -249,7 +249,9 @@ repository root. Replace the non-working examples:
 
 Keep credentials out of this file and leave `plugin/manifest.json` unchanged.
 The packager rejects anonymous authentication, extra connectors, loopback MCP
-URLs and legacy unauthenticated-endpoint acknowledgements.
+URLs and legacy unauthenticated-endpoint acknowledgements. All configured URLs
+must fit the manifest schema's 2048-character limit after URL normalization,
+including percent-encoding.
 
 From this repository root:
 
@@ -359,7 +361,7 @@ An assistant's suggestion of a different connector is not a diagnosis.
 
 ## Shared tool contract
 
-`package.json` pins the shared MCP version and normalized SHA-256 of
+`package.json` pins the shared MCP package version, source revision and normalized SHA-256 of
 `contracts/cowork-authenticated-tools.json`. `plugin/mcp-tools.json` is the generated client
 snapshot; package builds reject drift. Compare it with an approved shared checkout:
 
@@ -372,6 +374,13 @@ contract. Contract upgrades require an intentional version/hash review first.
 These commands are offline and never load server code or credentials.
 Cowork also discovers runtime tools through `tools/list`; updating the package
 alone does not update a running server.
+
+The Cowork client version, shared MCP package version and native MCP plugin
+version are independent. The pinned revision records contract provenance, not
+the revision of an operator's running backend. Publishing this source or
+building a ZIP neither updates an installed private Cowork package nor deploys
+the backend. Keep the installed package and running backend revision in private
+deployment records, and check compatibility before changing either.
 
 ## Before sharing source
 

@@ -5,8 +5,11 @@ https://github.com/fizamusthafa/servicenow-cowork-plugin
 Upstream baseline: 05c37c3.
 
 The upstream MIT license and its original copyright notice are preserved
-verbatim in LICENSE. The adaptation restricts the connection to four read-only
-tools, adds bounded incident discovery, and provides portable packaging.
+verbatim in LICENSE. The adaptation uses one authenticated, scope-filtered
+connection with a twenty-two-tool catalog for bounded incident/change reads,
+guarded incident and user-profile operations, and separately authorized,
+policy-controlled user access. It adds enterprise-grounded investigation
+instructions and portable packaging. Change requests remain read-only.
 
 The color icon restores plugin/color.png byte-for-byte from upstream baseline
 05c37c3 (Git blob 711cbf5054e2e7082e9dd42ff740ec599cb5c0d2).
