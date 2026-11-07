@@ -4,8 +4,7 @@
 
 Translate the user's business intent into related activities, components or observable symptoms
 that a ticket author might describe. Treat these as search hypotheses, not facts
-about the source or a confirmed cause. Use the user's context and ordinary domain
-knowledge; this is agent reasoning, not a fixed keyword dictionary.
+about the source or a confirmed cause. This is agent reasoning, not a fixed keyword dictionary.
 Choose search terms yourself; the user is not required to know ticket wording.
 Clarify genuine ambiguity about the intended service, not routine vocabulary differences.
 
@@ -27,11 +26,11 @@ Use at most three searches in total for incident retrieval:
    to inspect recent ticket vocabulary: omit `query` and preserve all requested filters.
    Take this fallback only when source restrictions permit browsing recent titles.
    The returned sample is bounded, not an exhaustive inventory.
-3. Use returned titles to ground relevance, not to rubber-stamp a hypothesis.
+3. Use returned titles to assess relevance.
    Use `get_incident` to
    inspect up to three candidates before claiming a connection. Compare their
-   affected service, symptoms, current state, impact, and recorded workaround
-   with the user's problem. A keyword match alone does not establish a cause.
+   service, symptoms, state, impact and workaround with the user's problem.
+   A keyword match alone does not establish a cause.
    Stop incident searching once inspected incident evidence is sufficient;
    this does not complete enterprise grounding.
 
@@ -57,10 +56,12 @@ including at most one fallback:
 1. Search for the affected service's system documentation, such as design or runbooks.
 2. Search separately for service ownership, support responsibilities or team context.
    Neither general query should require an incident number or symptom.
-3. If evidence is incomplete, use the single remaining search for a different
-   service term grounded in the question or retrieved context, or for incident-specific
-   discussion. Keep an incident-specific discussion query distinct from general
-   documentation/ownership queries. Do not retry denied or failed requests as keyword fallbacks.
+3. If evidence is incomplete, use the single remaining search.
+   After successful aggregate search with no documents, use authorized
+   source-native tools such as SharePoint: discover a relevant site/library and
+   read matching documents. No tenant-wide crawl. Otherwise try another service term.
+   Keep an incident-specific discussion query distinct from general documentation/ownership queries.
+   Do not retry denied or failed requests as keyword fallbacks or bypass a denial.
 
 Read up to three relevant hits, covering system documentation and responsibility evidence when available.
 Base findings on actual returned contents; titles, snippets or search activity alone are not grounding.
