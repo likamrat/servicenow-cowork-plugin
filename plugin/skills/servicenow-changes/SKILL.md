@@ -6,7 +6,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.13"
+  version: "1.0.12"
 ---
 
 # ServiceNow change requests

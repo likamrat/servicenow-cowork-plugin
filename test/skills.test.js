@@ -29,8 +29,6 @@ const contracts = {
   original_document_links: /Link document titles to original source-returned URLs in\s+the first answer when available/,
   no_helper_document_citations: /Cite original documents, not helper scripts or their\s+output artifacts; a script citation is not a document citation/,
   enterprise_provenance_gap: /If no original URL or\s+native source citation survives, disclose the provenance gap; never invent links/,
-  source_native_empty_fallback: /After successful aggregate search with no documents, use authorized\s+source-native tools such as SharePoint: discover a relevant site\/library and\s+read matching documents\. No tenant-wide crawl/,
-  source_native_denial_boundary: /Do not retry denied or failed requests as keyword fallbacks or bypass a denial/,
   supported_investigator: /Name an investigator only when retrieved responsibility evidence supports that person[\s\S]*directory identity alone is not ownership evidence/,
   recorded_owner_boundary: /Separate the incident's recorded group\/assignee from the recommended investigator/,
   ownership_gap: /conflicting, stale or team-only evidence[\s\S]*do not invent a named owner/,
@@ -116,7 +114,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.13"$/m);
+    assert.match(text, /^  version: "1\.0\.12"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
@@ -222,17 +220,6 @@ test("enterprise citations preserve original document provenance on the first-tu
     "enterprise_source_metadata", "original_document_links",
     "no_helper_document_citations", "enterprise_provenance_gap",
   ]) assert.match(reference, contracts[contract], contract);
-});
-
-test("empty aggregate recovery is in the triggered skill body and bounded reference", () => {
-  const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
-  const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
-  assert.match(incident, /After empty aggregate search, use authorized source-native document tools before\s+claiming no documents; never bypass denials/);
-  assert.match(reference, contracts.source_native_empty_fallback);
-  assert.match(reference, contracts.source_native_denial_boundary);
-  assert.match(reference, contracts.independent_enterprise_search);
-  assert.match(reference, contracts.bounded_enterprise_followup);
-  assert.match(reference, contracts.read_enterprise_hits);
 });
 
 // These assert that instructions cover each case, not that a model will follow them.

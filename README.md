@@ -23,10 +23,10 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.13 uses authorized source-native document tools when aggregate search
-returns no documents, within the existing first-response retrieval budget.
-It preserves original document provenance through script-assisted retrieval and
-links source-returned document URLs instead of citing helper scripts as documents.
+Release 1.0.12 preserves original document provenance through script-assisted
+retrieval and links source-returned document URLs in the first answer instead of
+citing helper scripts as documents. It retains first-response enterprise grounding
+for investigation ownership and system context without requiring document keywords.
 It preserves the separation of existing-user assignment from account/access administration.
 Existing assignees use the guarded
 incident workflow under `Incident.Manage`; user creation and access changes still
@@ -47,10 +47,6 @@ in that first response. General system-documentation and responsibility searches
 are separate from incident-specific discussion; they do not require a ticket ID
 or symptom match. At most three enterprise searches (including one fallback) and
 three relevant content reads ground document findings and the recommendation.
-After a successfully empty aggregate search, the remaining fallback uses
-authorized source-native tools, such as SharePoint site/library discovery and
-document reads, rather than treating aggregate emptiness as source-wide absence.
-This is not a tenant crawl, permission workaround or retry of a denied/failed call.
 Recorded assignment is not the recommended investigator, directory identity alone
 does not prove responsibility, and a recommendation does not authorize assignment.
 Excluded sources stay excluded; unavailable, denied, failed, empty or unreadable

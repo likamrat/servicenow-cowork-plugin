@@ -299,10 +299,6 @@ Upload the configured ZIP, not the template or source archive.
    activity labels are insufficient. General documentation/ownership queries must
    not require a ticket number or symptom. Keep recorded assignment distinct from
    an evidence-supported recommendation and perform no write for this question.
-   If aggregate search succeeds with no documents, require the bounded authorized
-   source-native fallback before concluding that documentation is absent. Site/
-   library discovery and actual content reads must use the current user's allowed
-   sources, without a tenant crawl or bypass of denied/failed requests.
    For script-assisted reads, require original source metadata to survive into
    the answer: document titles link to their source-returned URLs when available,
    or use native document citations. A helper-script citation is not an original

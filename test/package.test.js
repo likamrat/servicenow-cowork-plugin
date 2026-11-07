@@ -41,7 +41,7 @@ test("plugin ZIP has reproducible bytes, valid entries, all skills and aligned r
   assertArchiveIntegrity(zip);
   assert.deepEqual(zip.getEntries().map((entry) => entry.entryName).sort(), [...PLUGIN_FILES, "LICENSE", "NOTICE"].sort());
   const packaged = JSON.parse(zip.readAsText("manifest.json"));
-  assert.equal(packaged.version, "1.0.13");
+  assert.equal(packaged.version, "1.0.12");
   assert.equal(packaged.manifestVersion, "1.28", "The Microsoft manifest schema has its own version");
   assert.equal(JSON.parse(readSource("package.json")).version, packaged.version);
   const lock = JSON.parse(readSource("package-lock.json"));

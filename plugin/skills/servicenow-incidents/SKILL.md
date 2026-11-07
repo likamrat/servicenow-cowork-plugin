@@ -12,7 +12,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.13"
+  version: "1.0.12"
 ---
 
 # ServiceNow incidents
@@ -109,8 +109,6 @@ session, within the user's source restrictions.
 Complete the reference's enterprise-grounding steps in the first response,
 even if incident lookup finds nothing. A retrieved incident alone does not satisfy
 this intent; report any enterprise evidence gap rather than silently skipping it.
-After empty aggregate search, use authorized source-native document tools before
-claiming no documents; never bypass denials.
 
 ## Before answering
 
