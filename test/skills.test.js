@@ -25,6 +25,10 @@ const contracts = {
   ticket_independent_context: /Neither general query should require an incident number or symptom[\s\S]*incident-specific discussion query distinct/,
   bounded_enterprise_followup: /If evidence is incomplete, use the single remaining search[\s\S]*Do not retry denied or failed requests as keyword fallbacks/,
   read_enterprise_hits: /Read up to three relevant hits[\s\S]*system documentation and responsibility evidence when available[\s\S]*actual returned contents[\s\S]*titles, snippets or search activity alone are not grounding/,
+  enterprise_source_metadata: /Preserve each source's title, original URL\/native citation and supporting content together,\s+including in script output/,
+  original_document_links: /Link document titles to original source-returned URLs in\s+the first answer when available/,
+  no_helper_document_citations: /Cite original documents, not helper scripts or their\s+output artifacts; a script citation is not a document citation/,
+  enterprise_provenance_gap: /If no original URL or\s+native source citation survives, disclose the provenance gap; never invent links/,
   supported_investigator: /Name an investigator only when retrieved responsibility evidence supports that person[\s\S]*directory identity alone is not ownership evidence/,
   recorded_owner_boundary: /Separate the incident's recorded group\/assignee from the recommended investigator/,
   ownership_gap: /conflicting, stale or team-only evidence[\s\S]*do not invent a named owner/,
@@ -110,7 +114,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.11"$/m);
+    assert.match(text, /^  version: "1\.0\.12"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
@@ -206,6 +210,16 @@ test("first-turn ownership fixtures retain business-only prompts", () => {
     assert.doesNotMatch(item.prompt, /ServiceNow|Work\s?IQ|Microsoft 365|document|file|architecture|search|INC\d|Sam|Openspace/i);
     for (const contract of enterpriseContracts) assert.ok(item.contracts.includes(contract), `${id}: ${contract}`);
   }
+});
+
+test("enterprise citations preserve original document provenance on the first-turn path", () => {
+  const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
+  const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
+  assert.match(incident, /original source-returned links or native document\s+citations, not helper-script citations/);
+  for (const contract of [
+    "enterprise_source_metadata", "original_document_links",
+    "no_helper_document_citations", "enterprise_provenance_gap",
+  ]) assert.match(reference, contracts[contract], contract);
 });
 
 // These assert that instructions cover each case, not that a model will follow them.

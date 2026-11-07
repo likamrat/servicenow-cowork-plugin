@@ -23,8 +23,10 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.11 adds first-response enterprise grounding for investigation ownership
-and system context, without requiring document keywords in the user's question.
+Release 1.0.12 preserves original document provenance through script-assisted
+retrieval and links source-returned document URLs in the first answer instead of
+citing helper scripts as documents. It retains first-response enterprise grounding
+for investigation ownership and system context without requiring document keywords.
 It preserves the separation of existing-user assignment from account/access administration.
 Existing assignees use the guarded
 incident workflow under `Incident.Manage`; user creation and access changes still
@@ -48,7 +50,12 @@ three relevant content reads ground document findings and the recommendation.
 Recorded assignment is not the recommended investigator, directory identity alone
 does not prove responsibility, and a recommendation does not authorize assignment.
 Excluded sources stay excluded; unavailable, denied, failed, empty or unreadable
-evidence remains an explicit gap. Offline tests qualify these shipped instructions,
+evidence remains an explicit gap. Script-assisted reads retain source titles,
+original URLs/native citations and supporting contents together. Missing provenance
+is disclosed, not replaced with a script-output citation or an invented file link.
+Native file-card rendering and project-memory updates belong to Cowork, not this
+plugin; their presence or absence alone does not establish a document read.
+Offline tests qualify these shipped instructions,
 not actual model retrieval or a repair of an unknown client task failure.
 
 For a name-only assignment, the incident skill uses the current host's authorized

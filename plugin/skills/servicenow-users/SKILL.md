@@ -9,7 +9,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.11"
+  version: "1.0.12"
 ---
 
 # ServiceNow users

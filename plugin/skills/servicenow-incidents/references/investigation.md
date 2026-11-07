@@ -64,8 +64,11 @@ including at most one fallback:
 
 Read up to three relevant hits, covering system documentation and responsibility evidence when available.
 Base findings on actual returned contents; titles, snippets or search activity alone are not grounding.
-Cite the sources actually read using their returned links or citation identifiers;
-disclose missing links without inventing them.
+Preserve each source's title, original URL/native citation and supporting content together,
+including in script output. Link document titles to original source-returned URLs in
+the first answer when available. Cite original documents, not helper scripts or their
+output artifacts; a script citation is not a document citation. If no original URL or
+native source citation survives, disclose the provenance gap; never invent links.
 
 Separate the incident's recorded group/assignee from the recommended investigator.
 Name an investigator only when retrieved responsibility evidence supports that person;

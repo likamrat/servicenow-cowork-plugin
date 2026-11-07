@@ -66,6 +66,22 @@
     "contracts": ["enterprise_source_scope", "bounded_enterprise_followup", "read_enterprise_hits", "enterprise_completion", "access_distinction"]
   },
   {
+    "id": "script-assisted-enterprise-citations",
+    "skill": "servicenow-incidents",
+    "prompt": "Our warehouse scanners keep disconnecting. What's going on, and who should look into it?",
+    "condition": "Authorized document reads are composed through a script. Source results include the original document titles, URLs and contents, but the host also emits a citation to the script output.",
+    "expected_behavior": "Keep original source metadata with the supporting contents through script output. In the first answer, link document titles to their exact returned URLs and cite the original documents, not the helper script as if it were the document. Preserve evidence-based ownership and perform no assignment.",
+    "contracts": ["first_turn_grounding", "enterprise_source_metadata", "original_document_links", "no_helper_document_citations", "supported_investigator", "recommendation_not_assignment"]
+  },
+  {
+    "id": "enterprise-provenance-gap",
+    "skill": "servicenow-incidents",
+    "prompt": "Our expense application is slow. What's happening, and who should investigate?",
+    "condition": "The only surviving citation identifies a helper script; no original document URL or native source citation is available.",
+    "expected_behavior": "Disclose the provenance gap without inventing a document link or treating the helper citation as an original source citation. Do not claim that a file card or document link is available. Retain source restrictions and bounded retrieval rather than creating a project-memory or access workaround.",
+    "contracts": ["enterprise_source_metadata", "no_helper_document_citations", "enterprise_provenance_gap", "enterprise_source_scope", "independent_enterprise_search"]
+  },
+  {
     "id": "recorded-owner-not-recommendation",
     "skill": "servicenow-incidents",
     "prompt": "The incident has an assigned support group. Who should investigate the underlying issue?",

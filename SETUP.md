@@ -299,6 +299,12 @@ Upload the configured ZIP, not the template or source archive.
    activity labels are insufficient. General documentation/ownership queries must
    not require a ticket number or symptom. Keep recorded assignment distinct from
    an evidence-supported recommendation and perform no write for this question.
+   For script-assisted reads, require original source metadata to survive into
+   the answer: document titles link to their source-returned URLs when available,
+   or use native document citations. A helper-script citation is not an original
+   document citation. Report a missing source link/provenance gap rather than
+   inventing one. File-card rendering and project-memory errors are separate host
+   outcomes; neither establishes whether source contents were read.
    Report exclusions, unavailable tools, denied access, failed requests and missing
    or unreadable evidence distinctly. Do not add technical instructions to the
    prompt or defer this acceptance condition to a later architecture question.

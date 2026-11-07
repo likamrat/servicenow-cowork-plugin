@@ -12,7 +12,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.11"
+  version: "1.0.12"
 ---
 
 # ServiceNow incidents
@@ -125,3 +125,6 @@ this intent; report any enterprise evidence gap rather than silently skipping it
   investigation or proven fix.
 - Distinguish no matching evidence from unavailable tools, denied access and
   failed requests. Cite Microsoft 365 evidence separately.
+- For Microsoft 365 documents, use original source-returned links or native document
+  citations, not helper-script citations. Preserve source metadata through script-assisted
+  reads and disclose missing provenance.
