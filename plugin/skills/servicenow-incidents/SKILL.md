@@ -7,11 +7,12 @@ description: |
   terminology; also use for explicit incident lookup, status, creation,
   update, assignment, unassignment or deletion requests.
   Honor source restrictions. Exclude ordinary document-finding without an IT
-  problem. Include requested Microsoft 365 background.
+  problem. Treat system context or who should investigate as first-turn Work IQ
+  and Microsoft 365 grounding intent, even without explicit document requests.
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.10"
+  version: "1.0.11"
 ---
 
 # ServiceNow incidents
@@ -32,11 +33,13 @@ Do not treat profile fields as role grants, password setup or change approval.
 
 ## Find and inspect incident evidence
 
+Read [Natural-language investigation](references/investigation.md)
+before the first search or investigation answer,
+including when an incident number is supplied. Follow its incident and enterprise
+evidence steps; the user supplies the business question, not the ticket vocabulary.
+
 1. If the user supplies an incident number, call `get_incident` with that number.
-2. Otherwise, read [Natural-language investigation](references/investigation.md)
-   before the first search. Follow its intent translation, bounded retrieval
-   and candidate inspection steps; the user supplies the business question,
-   not the ticket vocabulary.
+2. Otherwise, follow the reference's bounded incident search and candidate inspection.
 
 Searches return at most 20 records, newest update first. All incident reads
 include only records updated within the last six months, including exact-number
@@ -100,11 +103,12 @@ an empty filtered search is not deletion proof.
 
 ## Combine with Microsoft 365
 
-For requested documentation or team background, use the Microsoft 365 tools
-available and authorized in the current Cowork session. Search using the affected
-service or symptom and, when found, the actual incident number and subject.
-If incident lookup finds nothing, still look for the requested background within
-the user's source restrictions.
+For documentation, system context, team guidance or investigation ownership, use
+Work IQ or the Microsoft 365 tools available and authorized in the current Cowork
+session, within the user's source restrictions.
+Complete the reference's enterprise-grounding steps in the first response,
+even if incident lookup finds nothing. A retrieved incident alone does not satisfy
+this intent; report any enterprise evidence gap rather than silently skipping it.
 
 ## Before answering
 

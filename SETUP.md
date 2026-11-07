@@ -292,6 +292,16 @@ Upload the configured ZIP, not the template or source archive.
    source records. Literal-title control queries diagnose retrieval but do not
    establish natural-language acceptance. Static skill tests check instructions,
    not whether the host's model follows them.
+   If that first question asks who should investigate or requests system context,
+   verify actual authorized Work IQ/Microsoft 365 retrieval and reads in the same
+   first response. Require relevant document findings and responsibility evidence
+   with returned citations alongside incident facts; plugin listings and search
+   activity labels are insufficient. General documentation/ownership queries must
+   not require a ticket number or symptom. Keep recorded assignment distinct from
+   an evidence-supported recommendation and perform no write for this question.
+   Report exclusions, unavailable tools, denied access, failed requests and missing
+   or unreadable evidence distinctly. Do not add technical instructions to the
+   prompt or defer this acceptance condition to a later architecture question.
 3. Use a fresh, normal freeform request such as "Can you assign this incident to
    Jordan Lee?" for the actual authorized target. Do not include a tool recipe,
    email, directory ID or creation choreography, or artificial source restrictions.

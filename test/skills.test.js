@@ -17,6 +17,19 @@ const contracts = {
   empty_not_health: /Empty matches prove neither absence of related incidents nor connection health/,
   candidate_inspection: /`get_incident` to[\s\S]*inspect up to three candidates before claiming a connection/,
   m365: /Microsoft 365 tools\s+available and authorized/,
+  enterprise_intent: /system context, team guidance or who should investigate[\s\S]*before the first answer[\s\S]*without explicit document, file or technical terms/,
+  first_turn_grounding: /Do not defer this to a later prompt/,
+  enterprise_source_scope: /Use only sources allowed by the user and available and authorized in this session[\s\S]*excludes enterprise sources[\s\S]*do not call them/,
+  independent_enterprise_search: /Independently of incident results, use at most three enterprise searches[\s\S]*including at most one fallback/,
+  system_context_query: /Search for the affected service's system documentation[\s\S]*Search separately for service ownership/,
+  ticket_independent_context: /Neither general query should require an incident number or symptom[\s\S]*incident-specific discussion query distinct/,
+  bounded_enterprise_followup: /If evidence is incomplete, use the single remaining search[\s\S]*Do not retry denied or failed requests as keyword fallbacks/,
+  read_enterprise_hits: /Read up to three relevant hits[\s\S]*system documentation and responsibility evidence when available[\s\S]*actual returned contents[\s\S]*titles, snippets or search activity alone are not grounding/,
+  supported_investigator: /Name an investigator only when retrieved responsibility evidence supports that person[\s\S]*directory identity alone is not ownership evidence/,
+  recorded_owner_boundary: /Separate the incident's recorded group\/assignee from the recommended investigator/,
+  ownership_gap: /conflicting, stale or team-only evidence[\s\S]*do not invent a named owner/,
+  recommendation_not_assignment: /A recommendation is not assignment authorization[\s\S]*do not resolve source assignees, provision users or write records/,
+  enterprise_completion: /Before answering, include the relevant document findings and the evidence for the recommendation[\s\S]*allowed evidence is missing or unreadable[\s\S]*not claim enterprise grounding is complete/,
   document_exclusion: /Exclude ordinary document-finding/,
   change_scope: /Reads recent ServiceNow change requests/,
   source_restrictions: /source restrictions/i,
@@ -97,7 +110,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.10"$/m);
+    assert.match(text, /^  version: "1\.0\.11"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
@@ -160,9 +173,39 @@ test("natural-language investigation is loaded before discovery and stays generi
   const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
   const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
   assert.match(incident, /\[Natural-language investigation\]\(references\/investigation\.md\)\s+before the first search/);
-  assert.ok(reference.trim().split(/\s+/).length < 500);
-  assert.doesNotMatch(reference, /https?:\/\/|[A-Z]{3}\d{7}|\bPOS\b|point of sale|card payments/i);
+  assert.ok(reference.trim().split(/\s+/).length < 750);
+  assert.doesNotMatch(incident + reference, /https?:\/\/|[A-Z]{3}\d{7}|\bPOS\b|point of sale|card payments|\bSam\b|Openspace/i);
   assert.match(reference, /agent reasoning, not a fixed keyword dictionary/);
+});
+
+const enterpriseContracts = [
+  "enterprise_intent", "first_turn_grounding", "enterprise_source_scope",
+  "independent_enterprise_search", "system_context_query", "ticket_independent_context",
+  "bounded_enterprise_followup", "read_enterprise_hits", "supported_investigator",
+  "recorded_owner_boundary", "ownership_gap", "recommendation_not_assignment", "enterprise_completion",
+];
+
+test("first-turn grounding lives on the investigation path, not only the assignment path", () => {
+  const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
+  const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
+  const description = incident.match(/^description: \|\n((?:  .*\n)+)/m)?.[1];
+  assert.match(description, /who should investigate[\s\S]*first-turn Work IQ/);
+  assert.match(incident, /before the first search or investigation answer,\s+including when an incident number is supplied/);
+  assert.match(incident, /Complete the reference's enterprise-grounding steps in the first response/);
+  assert.match(reference, /Use at most three searches in total for incident retrieval/);
+  assert.match(reference, /Stop incident searching once inspected incident evidence is sufficient;\s+this does not complete enterprise grounding/);
+  for (const contract of enterpriseContracts) assert.match(reference, contracts[contract], contract);
+});
+
+test("first-turn ownership fixtures retain business-only prompts", () => {
+  const first = cases.find(item => item.id === "first-turn-business-ownership");
+  assert.equal(first?.prompt, "Our stores are reporting slow card payments. What's happening, and who should investigate?");
+  for (const id of ["first-turn-business-ownership", "first-turn-other-service"]) {
+    const item = cases.find(item => item.id === id);
+    assert.ok(item, `Missing first-turn case: ${id}`);
+    assert.doesNotMatch(item.prompt, /ServiceNow|Work\s?IQ|Microsoft 365|document|file|architecture|search|INC\d|Sam|Openspace/i);
+    for (const contract of enterpriseContracts) assert.ok(item.contracts.includes(contract), `${id}: ${contract}`);
+  }
 });
 
 // These assert that instructions cover each case, not that a model will follow them.

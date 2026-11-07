@@ -23,8 +23,10 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.10 keeps natural-language incident discovery and separates existing-user
-assignment from account/access administration. Existing assignees use the guarded
+Release 1.0.11 adds first-response enterprise grounding for investigation ownership
+and system context, without requiring document keywords in the user's question.
+It preserves the separation of existing-user assignment from account/access administration.
+Existing assignees use the guarded
 incident workflow under `Incident.Manage`; user creation and access changes still
 require their own scopes and qualified policies. The connector, tool contract and
 combined handoff-note safeguards are unchanged.
@@ -36,6 +38,18 @@ wording. Two distinct targeted searches can fall back to one bounded recent-titl
 sample, subject to source restrictions and requested filters. Explicit literal-title
 requests remain literal. Candidate inspection grounds relevance; empty matches
 prove neither instance-wide absence nor connection health.
+
+When an investigation asks who should investigate or requests system/team context,
+the skill also uses the current session's permitted Work IQ or Microsoft 365 tools
+in that first response. General system-documentation and responsibility searches
+are separate from incident-specific discussion; they do not require a ticket ID
+or symptom match. At most three enterprise searches (including one fallback) and
+three relevant content reads ground document findings and the recommendation.
+Recorded assignment is not the recommended investigator, directory identity alone
+does not prove responsibility, and a recommendation does not authorize assignment.
+Excluded sources stay excluded; unavailable, denied, failed, empty or unreadable
+evidence remains an explicit gap. Offline tests qualify these shipped instructions,
+not actual model retrieval or a repair of an unknown client task failure.
 
 For a name-only assignment, the incident skill uses the current host's authorized
 Work IQ/directory capability, handles technical login/email internally, then
