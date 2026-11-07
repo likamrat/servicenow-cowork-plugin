@@ -299,6 +299,12 @@ Upload the configured ZIP, not the template or source archive.
    activity labels are insufficient. General documentation/ownership queries must
    not require a ticket number or symptom. Keep recorded assignment distinct from
    an evidence-supported recommendation and perform no write for this question.
+   Start with no previously discovered document repository in the task. Require
+   authorized source-context discovery before repository document queries, using
+   returned site/library/drive/folder identities within the existing search budget.
+   Do not prime the task with an access-check question, site link or project memory.
+   Source discovery and file matches are not content reads; require actual document
+   findings before accepting a responsibility recommendation.
    For script-assisted reads, require original source metadata to survive into
    the answer: document titles link to their source-returned URLs when available,
    or use native document citations. A helper-script citation is not an original

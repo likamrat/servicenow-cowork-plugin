@@ -54,10 +54,20 @@ use only permitted evidence and disclose the scope limit.
 Independently of incident results, use at most three enterprise searches,
 including at most one fallback:
 
+Establish document-source context before document queries for repository documents.
+Use authorized discovery tools to resolve the relevant repository from the
+request or inspected business records. For SharePoint, retain returned site, library/drive and folder identifiers
+and URLs. Reuse verified context within the task.
+Do not depend on a prior task, project memory, an access-check prompt or
+a user-supplied document link.
+Search and read within that resolved source using its native document workflow.
+Count targeted discovery and searches against the same budget.
+Do not guess identifiers or crawl unrelated sites.
+
 1. Search for the affected service's system documentation, such as design or runbooks.
 2. Search separately for service ownership, support responsibilities or team context.
    Neither general query should require an incident number or symptom.
-3. If evidence is incomplete, use the single remaining search for a different
+3. If evidence is incomplete and budget remains, use at most one follow-up search for a different
    service term grounded in the question or retrieved context, or for incident-specific
    discussion. Keep an incident-specific discussion query distinct from general
    documentation/ownership queries. Do not retry denied or failed requests as keyword fallbacks.

@@ -23,12 +23,15 @@ const contracts = {
   independent_enterprise_search: /Independently of incident results, use at most three enterprise searches[\s\S]*including at most one fallback/,
   system_context_query: /Search for the affected service's system documentation[\s\S]*Search separately for service ownership/,
   ticket_independent_context: /Neither general query should require an incident number or symptom[\s\S]*incident-specific discussion query distinct/,
-  bounded_enterprise_followup: /If evidence is incomplete, use the single remaining search[\s\S]*Do not retry denied or failed requests as keyword fallbacks/,
+  bounded_enterprise_followup: /If evidence is incomplete and budget remains, use at most one follow-up search[\s\S]*Do not retry denied or failed requests as keyword fallbacks/,
   read_enterprise_hits: /Read up to three relevant hits[\s\S]*system documentation and responsibility evidence when available[\s\S]*actual returned contents[\s\S]*titles, snippets or search activity alone are not grounding/,
   enterprise_source_metadata: /Preserve each source's title, original URL\/native citation and supporting content together,\s+including in script output/,
   original_document_links: /Link document titles to original source-returned URLs in\s+the first answer when available/,
   no_helper_document_citations: /Cite original documents, not helper scripts or their\s+output artifacts; a script citation is not a document citation/,
   enterprise_provenance_gap: /If no original URL or\s+native source citation survives, disclose the provenance gap; never invent links/,
+  source_context_first: /Establish document-source context before document queries[\s\S]*authorized discovery tools[\s\S]*request or inspected business records[\s\S]*returned site, library\/drive and folder identifiers/,
+  fresh_source_context: /Do not depend on a prior task, project memory, an access-check prompt or\s+a user-supplied document link/,
+  scoped_document_search: /Search and read within that resolved source using its native document workflow[\s\S]*Count targeted discovery and searches against the same budget[\s\S]*Do not guess identifiers or crawl unrelated sites/,
   supported_investigator: /Name an investigator only when retrieved responsibility evidence supports that person[\s\S]*directory identity alone is not ownership evidence/,
   recorded_owner_boundary: /Separate the incident's recorded group\/assignee from the recommended investigator/,
   ownership_gap: /conflicting, stale or team-only evidence[\s\S]*do not invent a named owner/,
@@ -114,7 +117,7 @@ for (const name of ["servicenow-incidents", "servicenow-changes", "servicenow-us
     assert.ok(name.length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name));
     assert.match(text, /^license: MIT$/m);
     assert.match(text, /^  author: Lior Kamrat$/m);
-    assert.match(text, /^  version: "1\.0\.12"$/m);
+    assert.match(text, /^  version: "1\.0\.14"$/m);
     assert.doesNotMatch(text, /`servicenow-mcp-(?:incidents|changes|users)`/);
     if (name === "servicenow-incidents") {
       assert.equal(text.match(/^## (.+)$/m)?.[1], "Evidence first");
@@ -177,7 +180,7 @@ test("natural-language investigation is loaded before discovery and stays generi
   const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
   const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
   assert.match(incident, /\[Natural-language investigation\]\(references\/investigation\.md\)\s+before the first search/);
-  assert.ok(reference.trim().split(/\s+/).length < 750);
+  assert.ok(reference.trim().split(/\s+/).length < 850);
   assert.doesNotMatch(incident + reference, /https?:\/\/|[A-Z]{3}\d{7}|\bPOS\b|point of sale|card payments|\bSam\b|Openspace/i);
   assert.match(reference, /agent reasoning, not a fixed keyword dictionary/);
 });
@@ -219,6 +222,17 @@ test("enterprise citations preserve original document provenance on the first-tu
   for (const contract of [
     "enterprise_source_metadata", "original_document_links",
     "no_helper_document_citations", "enterprise_provenance_gap",
+  ]) assert.match(reference, contracts[contract], contract);
+});
+
+test("first-turn document discovery establishes source context without a preparatory user prompt", () => {
+  const incident = readSource("plugin/skills/servicenow-incidents/SKILL.md").toString();
+  const reference = readSource("plugin/skills/servicenow-incidents/references/investigation.md").toString();
+  assert.match(incident, /Establish document-source context before searching; use the reference's discovery step,\s+not a prior conversation or a preparatory user prompt/);
+  for (const contract of [
+    "source_context_first", "fresh_source_context", "scoped_document_search",
+    "enterprise_source_scope", "independent_enterprise_search",
+    "read_enterprise_hits", "supported_investigator",
   ]) assert.match(reference, contracts[contract], contract);
 });
 

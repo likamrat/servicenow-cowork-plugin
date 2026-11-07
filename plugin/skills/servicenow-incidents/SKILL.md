@@ -12,7 +12,7 @@ description: |
 license: MIT
 metadata:
   author: Lior Kamrat
-  version: "1.0.12"
+  version: "1.0.14"
 ---
 
 # ServiceNow incidents
@@ -107,8 +107,9 @@ For documentation, system context, team guidance or investigation ownership, use
 Work IQ or the Microsoft 365 tools available and authorized in the current Cowork
 session, within the user's source restrictions.
 Complete the reference's enterprise-grounding steps in the first response,
-even if incident lookup finds nothing. A retrieved incident alone does not satisfy
-this intent; report any enterprise evidence gap rather than silently skipping it.
+even if incident lookup finds nothing. Disclose evidence gaps.
+Establish document-source context before searching; use the reference's discovery step,
+not a prior conversation or a preparatory user prompt.
 
 ## Before answering
 

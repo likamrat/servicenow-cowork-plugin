@@ -66,6 +66,22 @@
     "contracts": ["enterprise_source_scope", "bounded_enterprise_followup", "read_enterprise_hits", "enterprise_completion", "access_distinction"]
   },
   {
+    "id": "cold-task-document-source-context",
+    "skill": "servicenow-incidents",
+    "prompt": "Our stores are reporting slow card payments. What's happening, and who should investigate?",
+    "condition": "This is a fresh task without a known document site or library. Authorized source discovery can resolve the relevant repository from the question or inspected business records.",
+    "expected_behavior": "Establish the relevant source context before document queries, retain returned site/library/drive/folder identifiers, then search and read within that source in the first answer. Count targeted discovery within the existing enterprise budget. Do not require an access-check prompt, project memory, supplied URL, fixed site, or known investigator.",
+    "contracts": ["first_turn_grounding", "source_context_first", "fresh_source_context", "scoped_document_search", "enterprise_source_scope", "independent_enterprise_search", "read_enterprise_hits", "supported_investigator", "recommendation_not_assignment"]
+  },
+  {
+    "id": "source-context-not-a-document-read",
+    "skill": "servicenow-incidents",
+    "prompt": "Our warehouse scanners keep disconnecting. What's going on, and who should look into it?",
+    "condition": "Source discovery and a scoped search return a folder plus document titles and links, but no file contents have yet been read.",
+    "expected_behavior": "Use the returned source identities to read relevant document contents before claiming architecture or investigator responsibility. Discovery, folder matches and titles alone do not satisfy grounding. Preserve original links and report an unreadable-content gap rather than treating discovery as success.",
+    "contracts": ["source_context_first", "scoped_document_search", "read_enterprise_hits", "supported_investigator", "original_document_links", "enterprise_completion"]
+  },
+  {
     "id": "script-assisted-enterprise-citations",
     "skill": "servicenow-incidents",
     "prompt": "Our warehouse scanners keep disconnecting. What's going on, and who should look into it?",

@@ -23,10 +23,10 @@ to disable and re-enable the plugin.
 The skill identities are `servicenow-incidents`, `servicenow-changes` and
 `servicenow-users`. Each folder matches its frontmatter name; the names omit
 the transport label without changing the shared MCP backend or workflows.
-Release 1.0.12 preserves original document provenance through script-assisted
-retrieval and links source-returned document URLs in the first answer instead of
-citing helper scripts as documents. It retains first-response enterprise grounding
-for investigation ownership and system context without requiring document keywords.
+Release 1.0.14 establishes document-source context before first-turn document
+queries, using authorized discovery and returned repository identifiers rather
+than a preparatory user prompt or project memory. It preserves original document
+links and evidence-based investigation ownership.
 It preserves the separation of existing-user assignment from account/access administration.
 Existing assignees use the guarded
 incident workflow under `Incident.Manage`; user creation and access changes still
@@ -47,6 +47,11 @@ in that first response. General system-documentation and responsibility searches
 are separate from incident-specific discussion; they do not require a ticket ID
 or symptom match. At most three enterprise searches (including one fallback) and
 three relevant content reads ground document findings and the recommendation.
+Repository discovery is part of that same search budget, not an additional allowance.
+For SharePoint documents, the agent resolves the relevant site/library or drive/folder
+from the user's request or inspected business records, then uses that returned
+context for document searches and reads. It neither guesses identifiers nor crawls
+unrelated sites. A follow-up search is allowed only while budget remains.
 Recorded assignment is not the recommended investigator, directory identity alone
 does not prove responsibility, and a recommendation does not authorize assignment.
 Excluded sources stay excluded; unavailable, denied, failed, empty or unreadable
